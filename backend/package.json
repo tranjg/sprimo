@@ -8,5 +8,15 @@
     "@types/pg": "^8.15.4",
     "drizzle-kit": "^0.31.1",
     "tsx": "^4.19.4"
+  },
+  "scripts": {
+    "db:pull": "drizzle-kit introspect",
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "db:generate": "drizzle-kit generate",
+    "db:drop": "drizzle-kit drop",
+    "db:up": "drizzle-kit up",
+    "db:check": "drizzle-kit check",
+    "db:studio": "drizzle-kit studio"
   }
 }
