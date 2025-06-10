@@ -1,11 +1,12 @@
-import { useState } from "react";
+import Layout from "./layout.tsx";
 
 function Home() {
   return (
-    <div>
-      <div>HELLO WORLD!</div>
-      <div>THIS WILL BE YOUR NEW APP</div>
-    </div>
+    <Layout>
+      <div className="flex h-full w-full justify-center items-center">
+        <h1 className="font-semibold">Welcome to Sprimo</h1>
+      </div>
+    </Layout>
   );
 }
 
