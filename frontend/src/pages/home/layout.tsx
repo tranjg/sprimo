@@ -5,7 +5,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main className="flex h-screen w-screen">{children}</main>
+      <main className="h-screen w-screen">{children}</main>
     </SidebarProvider>
   );
 }
