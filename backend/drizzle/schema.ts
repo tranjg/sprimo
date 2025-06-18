@@ -1,8 +1,62 @@
-import { date, pgTable, uuid, varchar } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { date, pgTable, uuid, varchar, integer, text, primaryKey, unique } from "drizzle-orm/pg-core";
+
+export const users = pgTable('users', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    first_name: varchar('first_name', {length: 35}).notNull(),
+    last_name: varchar('last_name', {length: 35}).notNull(),
+    email: varchar('email', {length: 255}).notNull(),
+    username: varchar('username', {length: 12}).notNull(),
+    password: varchar('password', {length: 64}).notNull(),
+    created_at: date('created_at').defaultNow()
+})
+
+export const usersRelations = relations(users, ({many}) =>({
+    teams: many(teams),
+    projects: many(projects)
+}));
 
 export const teams = pgTable('teams', {
     id: uuid('id').defaultRandom().primaryKey(),
     name: varchar('name', {length: 50}).notNull(),
-    jira_board_id: varchar('jira_board_id'),
-    github_repo_url: varchar('github_repo_url'),
+    description: varchar('description', {length: 250}),
+    created_by: uuid('created_by').references(() => users.id).notNull(),
+    created_at: date('created_at').defaultNow()
 })
+
+export const teamsRelations = relations(teams, ({many}) =>({
+    team_members: many(team_members)
+}))
+
+export const team_members = pgTable('team_members', {
+    user_id: uuid('user_id').references(() => users.id, {onDelete:'cascade'}).notNull(),
+    team_id: uuid('team_id').references(() => teams.id, {onDelete:'cascade'}).notNull(),
+    role: text('role').default('member'),
+    joined_at: date('joined_at').defaultNow()
+}, (table) => [
+    primaryKey({ columns: [table.team_id, table.user_id]})
+]
+)
+
+export const projects = pgTable('projects', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    team_id: uuid('team_id').references(() => teams.id, {onDelete:'cascade'}).notNull(),
+    name: varchar('name', {length: 50}).notNull(),
+    status: text('status').default('active'),
+    jira_project_key: text('jira_project_key'),
+    github_repo_url: text('github_repo_url'),
+    created_by: uuid('created_by').references(() => users.id),
+    created_at: date('created_at').defaultNow()
+})
+
+export const projectsRelations = relations(teams, ({many}) => ({
+    project_members: many(project_members)
+}))
+
+export const project_members = pgTable('project_members', {
+    user_id: uuid('user_id').references(() => users.id, {onDelete: 'cascade'}).notNull(),
+    project_id: uuid('project_id').references(() => projects.id, {onDelete:'cascade'}).notNull(),
+    joined_at: date('joined_at').defaultNow()
+}, (table) => [
+    unique().on(table.user_id, table.project_id)
+])
