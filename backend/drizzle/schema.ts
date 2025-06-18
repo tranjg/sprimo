@@ -60,3 +60,14 @@ export const project_members = pgTable('project_members', {
 }, (table) => [
     unique().on(table.user_id, table.project_id)
 ])
+
+export const invitations = pgTable('invitations', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    email: varchar('email', {length: 255}).notNull(),
+    team_id: uuid('team_id').references(() => teams.id, {onDelete: 'cascade'}),
+    project_id: uuid('project_id').references(() => projects.id),
+    invited_by: uuid('invited_by').references(() => users.id),
+    status: text('status').default('pending'),
+    token: text().unique().notNull(),
+    created_at: date('created_at').defaultNow()
+})
