@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { date, pgTable, uuid, varchar, integer, text, primaryKey, unique } from "drizzle-orm/pg-core";
+import { date, pgTable, uuid, varchar, integer, text, primaryKey, unique, timestamp } from "drizzle-orm/pg-core";
 
 export const users = pgTable('users', {
     id: uuid('id').defaultRandom().primaryKey(),
@@ -8,7 +8,7 @@ export const users = pgTable('users', {
     email: varchar('email', {length: 255}).notNull(),
     username: varchar('username', {length: 12}).notNull(),
     password: varchar('password', {length: 64}).notNull(),
-    created_at: date('created_at').defaultNow()
+    created_at: timestamp('created_at').defaultNow()
 })
 
 export const usersRelations = relations(users, ({many}) =>({
@@ -21,7 +21,7 @@ export const teams = pgTable('teams', {
     name: varchar('name', {length: 50}).notNull(),
     description: varchar('description', {length: 250}),
     created_by: uuid('created_by').references(() => users.id).notNull(),
-    created_at: date('created_at').defaultNow()
+    created_at: timestamp('created_at').defaultNow()
 })
 
 export const teamsRelations = relations(teams, ({many}) =>({
@@ -32,7 +32,7 @@ export const team_members = pgTable('team_members', {
     user_id: uuid('user_id').references(() => users.id, {onDelete:'cascade'}).notNull(),
     team_id: uuid('team_id').references(() => teams.id, {onDelete:'cascade'}).notNull(),
     role: text('role').default('member'),
-    joined_at: date('joined_at').defaultNow()
+    joined_at: timestamp('joined_at').defaultNow()
 }, (table) => [
     primaryKey({ columns: [table.team_id, table.user_id]})
 ]
@@ -46,7 +46,7 @@ export const projects = pgTable('projects', {
     jira_project_key: text('jira_project_key'),
     github_repo_url: text('github_repo_url'),
     created_by: uuid('created_by').references(() => users.id),
-    created_at: date('created_at').defaultNow()
+    created_at: timestamp('created_at').defaultNow()
 })
 
 export const projectsRelations = relations(teams, ({many}) => ({
@@ -56,7 +56,7 @@ export const projectsRelations = relations(teams, ({many}) => ({
 export const project_members = pgTable('project_members', {
     user_id: uuid('user_id').references(() => users.id, {onDelete: 'cascade'}).notNull(),
     project_id: uuid('project_id').references(() => projects.id, {onDelete:'cascade'}).notNull(),
-    joined_at: date('joined_at').defaultNow()
+    joined_at: timestamp('joined_at').defaultNow()
 }, (table) => [
     unique().on(table.user_id, table.project_id)
 ])
@@ -69,5 +69,5 @@ export const invitations = pgTable('invitations', {
     invited_by: uuid('invited_by').references(() => users.id),
     status: text('status').default('pending'),
     token: text().unique().notNull(),
-    created_at: date('created_at').defaultNow()
+    created_at: timestamp('created_at').defaultNow()
 })
