@@ -6,7 +6,7 @@ import { VelocityChart } from "../../components/VelocityChart.tsx";
 import { useState } from "react";
 import CreateTeamDialog from "./components/CreateTeamDialog.tsx";
 
-function Home() {
+function Dashboard() {
   const [members, setMembers] = useState<string[]>([])
 
   return (
@@ -30,4 +30,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default Dashboard;
