@@ -10,7 +10,7 @@ const Hero = () => {
             <NavigationMenuList>
               <NavigationMenuItem>
                   <NavigationMenuLink>
-                    <Link to={"/home"}>Home</Link>
+                    <Link to={"/dashboard"}>Home</Link>
                   </NavigationMenuLink>
               </NavigationMenuItem>
             </NavigationMenuList>
@@ -24,7 +24,9 @@ const Hero = () => {
           A unified dashboard that helps Agile teams monitor progress, detect blockers early, and stay aligned—across GitHub, Jira, and Slack.
           </p>
         </div>
-        <Button>Sign Up</Button>
+        <Button>
+          <Link to={"/signup"}>Sign Up</Link>
+        </Button>
       </div>
     )
 }
