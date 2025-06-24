@@ -14,7 +14,6 @@ const LoginForm = () => {
 
     const formSchema = z.object({
         email: z.string().email({message: "Invalid email address"}),
-        username: z.string().min(2, {message: "Must be 2 or more characters long"}).max(50, {message: "Must be 50 or fewer characters long"}),
         password: z
       .string()
       .min(6, { message: 'Password must be at least 6 characters long' })})
@@ -23,27 +22,24 @@ const LoginForm = () => {
         resolver: zodResolver(formSchema),
         defaultValues: {
             email: "",
-            username: "",
             password: "",
         },
     })
     
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        try {
-          const res = await axios.post('http://localhost:3000/api/auth/sign-up', values)
-          
-          if (res.data) {
-
+        
+      try {
+          const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, values)
+          if (res.data.token) {
+            localStorage.setItem("token", res.data.token)
           }
-
+          toast.success("Successfully signed in")
         } catch (error:any) {
           console.error('Form submission error', error)
           if (error.response && error.response.data) {
-            // Display the server-side error message (e.g., user exists)
             const errorMessage = error.response.data.message || 'Failed to submit the form. Please try again.';
             toast.error(errorMessage);
           } else {
-            // Generic error handling if no specific message is found
             toast.error('Failed to submit the form. Please try again.');
           }
         }
