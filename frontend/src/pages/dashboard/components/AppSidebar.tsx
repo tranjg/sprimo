@@ -9,6 +9,7 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -16,6 +17,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { NavUser } from "./NavUser";
+import { jwtDecode } from 'jwt-decode'
 
 // Menu items.
 const items = [
@@ -46,6 +49,13 @@ const items = [
   },
 ];
 
+let decodedToken: string
+
+const token = localStorage.getItem("token") as string
+if (token) {
+decodedToken = jwtDecode(token)
+}
+
 export function AppSidebar() {
   return (
     <Sidebar variant="floating">
@@ -68,6 +78,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+          <SidebarFooter>
+            <NavUser user={decodedToken}/>
+          </SidebarFooter>
     </Sidebar>
   );
 }
