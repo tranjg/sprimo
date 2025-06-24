@@ -5,12 +5,13 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { PasswordInput } from "@/components/ui/password-input"
 import { toast } from "sonner"
 import axios from "axios"
 
 const LoginForm = () => {
+    const navigate = useNavigate();
 
     const formSchema = z.object({
         email: z.string().email({message: "Invalid email address"}),
@@ -33,7 +34,7 @@ const LoginForm = () => {
           if (res.data.token) {
             localStorage.setItem("token", res.data.token)
           }
-          toast.success("Successfully signed in")
+          navigate("/dashboard")
         } catch (error:any) {
           console.error('Form submission error', error)
           if (error.response && error.response.data) {

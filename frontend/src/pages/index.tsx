@@ -16,7 +16,7 @@ const Hero = () => {
             </NavigationMenuList>
           </NavigationMenu>
         </div>
-        <div className="flex flex-col border-1 rounded-md justify-center w-1/2 p-4">
+        <div className="flex flex-col border-1 rounded-md justify-center w-3/4 md:w-1/2 p-4">
           <h1 className="font-extrabold text-2xl">
             Track Sprint Health. Unblock your team.
           </h1>
@@ -25,7 +25,7 @@ const Hero = () => {
           </p>
         </div>
         <Button>
-          <Link to={"/signup"}>Sign Up</Link>
+          <Link to={"/register"}>Sign Up</Link>
         </Button>
       </div>
     )
