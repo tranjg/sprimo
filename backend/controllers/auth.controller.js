@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 
 const db = drizzle(process.env.DATABASE_URL);
 
-export const signUp = async (req, res) => {
+export const register = async (req, res) => {
   try {
     const values = req.body;
     const salt = await bcrypt.genSalt(10);

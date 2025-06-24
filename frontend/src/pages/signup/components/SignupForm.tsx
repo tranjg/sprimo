@@ -41,10 +41,11 @@ const SignupForm = () => {
     })
     
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        try {
-          const res = await axios.post('http://localhost:3000/api/auth/sign-up', values)
+      try {
+          const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/register`, values)
           if (res.data) {
-            (navigate('/login'))
+            toast.success('Registered successfully.')
+            navigate('/login')
           }
         } catch (error:any) {
           console.error('Form submission error', error)
