@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Link } from "react-router-dom"
 import { PasswordInput } from "@/components/ui/password-input"
 import { toast } from "sonner"
+import axios from "axios"
 
 const SignupForm = () => {
 
@@ -38,18 +39,26 @@ const SignupForm = () => {
         },
     })
     
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
+          const res = await axios.post('http://localhost:3000/api/auth/sign-up', values)
+          console.log(res.data)
           // Assuming an async registration function
-          console.log(values)
           toast(
             <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
               <code className="text-white">{JSON.stringify(values, null, 2)}</code>
             </pre>,
           )
-        } catch (error) {
+        } catch (error:any) {
           console.error('Form submission error', error)
-          toast.error('Failed to submit the form. Please try again.')
+          if (error.response && error.response.data) {
+            // Display the server-side error message (e.g., user exists)
+            const errorMessage = error.response.data.message || 'Failed to submit the form. Please try again.';
+            toast.error(errorMessage);
+          } else {
+            // Generic error handling if no specific message is found
+            toast.error('Failed to submit the form. Please try again.');
+          }
         }
       }
 
