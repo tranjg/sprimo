@@ -5,13 +5,15 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { PasswordInput } from "@/components/ui/password-input"
 import { toast } from "sonner"
 import axios from "axios"
 
 const SignupForm = () => {
+    const navigate = useNavigate();
 
+  
     const formSchema = z.object({
         first_name: z.string().min(2, {message: "Must be 2 or more characters long"}).max(35, {message: "Must be 35 or fewer characters long"}),
         last_name: z.string().min(2, {message: "Must be 2 or more characters long"}).max(35, {message: "Must be 35 or fewer characters long"}),
@@ -42,21 +44,15 @@ const SignupForm = () => {
     async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
           const res = await axios.post('http://localhost:3000/api/auth/sign-up', values)
-          console.log(res.data)
-          // Assuming an async registration function
-          toast(
-            <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-              <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-            </pre>,
-          )
+          if (res.data) {
+            (navigate('/login'))
+          }
         } catch (error:any) {
           console.error('Form submission error', error)
           if (error.response && error.response.data) {
-            // Display the server-side error message (e.g., user exists)
             const errorMessage = error.response.data.message || 'Failed to submit the form. Please try again.';
             toast.error(errorMessage);
           } else {
-            // Generic error handling if no specific message is found
             toast.error('Failed to submit the form. Please try again.');
           }
         }
