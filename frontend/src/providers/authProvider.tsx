@@ -17,15 +17,18 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Function to set the authentication token
   const setToken = (newToken: string | null) => {
     setToken_(newToken);
+    if (newToken) {
+      localStorage.setItem("token", newToken);
+    } else {
+      localStorage.removeItem("token")
+    }
   };
 
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common["Authorization"] = "Bearer " + token;
-      localStorage.setItem('token',token);
     } else {
       delete axios.defaults.headers.common["Authorization"];
-      localStorage.removeItem('token')
     }
   }, [token]);
 

@@ -27,10 +27,12 @@ import {
     useSidebar,
   } from "@/components/ui/sidebar"
 import { useNavigate } from "react-router-dom"
+import { stringToGradient } from "@/lib/utils"
   export function NavUser({
     user,
   }: {
     user: {
+      id: string
       username: string
       email: string
       avatar: string
@@ -47,10 +49,9 @@ import { useNavigate } from "react-router-dom"
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                {/* <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                </Avatar> */}
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarFallback className="rounded-lg" style={{ backgroundImage: stringToGradient(user.id)}}>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.username}</span>
                   <span className="truncate text-xs">{user.email}</span>
@@ -66,10 +67,9 @@ import { useNavigate } from "react-router-dom"
             >
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                  {/* <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={user.avatar} alt={user.username} />
-                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                  </Avatar> */}
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarFallback className="rounded-lg" style={{ backgroundImage: stringToGradient(user.id)}}>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{user.username}</span>
                     <span className="truncate text-xs">{user.email}</span>
@@ -77,22 +77,22 @@ import { useNavigate } from "react-router-dom"
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuGroup>
+              {/* <DropdownMenuGroup>
                 <DropdownMenuItem>
                   <Sparkles />
                   Upgrade to Pro
                 </DropdownMenuItem>
               </DropdownMenuGroup>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator /> */}
               <DropdownMenuGroup>
                 <DropdownMenuItem>
                   <BadgeCheck />
                   Account
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                {/* <DropdownMenuItem>
                   <CreditCard />
                   Billing
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 <DropdownMenuItem>
                   <Bell />
                   Notifications
