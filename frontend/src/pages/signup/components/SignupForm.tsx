@@ -13,7 +13,6 @@ import axios from "axios"
 const SignupForm = () => {
     const navigate = useNavigate();
 
-  
     const formSchema = z.object({
         first_name: z.string().min(2, {message: "Must be 2 or more characters long"}).max(35, {message: "Must be 35 or fewer characters long"}),
         last_name: z.string().min(2, {message: "Must be 2 or more characters long"}).max(35, {message: "Must be 35 or fewer characters long"}),
