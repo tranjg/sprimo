@@ -9,8 +9,6 @@ import CreateTeamDialog from "./components/CreateTeamDialog.tsx";
 
 function Dashboard() {
   const [members, setMembers] = useState<string[]>([]);
-  const currentState = store.getState();
-  console.log(currentState);
   return (
     <Layout>
       <div className="flex-1 p-2">
