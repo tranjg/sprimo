@@ -11,12 +11,12 @@ const CreateTeamDialog = () => {
     const [members, setMembers] = useState<string[]>([]);
     return(
         <Dialog>
+            <Button asChild>
           <DialogTrigger>
-            <Button>
               Create Team
               <PlusIcon />
-            </Button>
             </DialogTrigger>
+            </Button>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create Team</DialogTitle>
