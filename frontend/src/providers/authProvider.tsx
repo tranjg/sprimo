@@ -25,6 +25,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    let token
     if (token) {
       axios.defaults.headers.common["Authorization"] = "Bearer " + token;
     } else {

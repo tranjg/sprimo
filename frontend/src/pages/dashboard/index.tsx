@@ -4,16 +4,18 @@ import { WorkItemFlowChart } from "../../components/WorkItemFlowChart.tsx";
 import { SprintGoalCompletionChart } from "../../components/SprintGoalCompletionChart.tsx";
 import { VelocityChart } from "../../components/VelocityChart.tsx";
 import { useState } from "react";
+import { store } from "@/reducers/store.ts";
 import CreateTeamDialog from "./components/CreateTeamDialog.tsx";
 
 function Dashboard() {
-  const [members, setMembers] = useState<string[]>([])
-
+  const [members, setMembers] = useState<string[]>([]);
+  const currentState = store.getState();
+  console.log(currentState);
   return (
     <Layout>
       <div className="flex-1 p-2">
         <div className="flex p-4 border-1 rounded-md justify-end bg-sidebar">
-        <CreateTeamDialog />
+          <CreateTeamDialog />
         </div>
         <div className="flex lg:flex-row flex-col gap-4 mt-4 p-4 border-1 rounded-md h-full">
           <div className="flex flex-col basis-1/2 p-4 gap-4 h-full">

@@ -8,6 +8,10 @@ import ProtectedRoute from "./ProtectedRoute.tsx";
 export const router = createBrowserRouter([
   {
     path: "/",
+    element: <Hero />,
+  },
+  {
+    path: "/",
     element: <ProtectedRoute />,
     children: [
       {
@@ -15,10 +19,6 @@ export const router = createBrowserRouter([
         element: <Dashboard />
       }
     ]
-  },
-  {
-    path: "/home",
-    element: <Hero />,
   },
   {
     path: "/register",

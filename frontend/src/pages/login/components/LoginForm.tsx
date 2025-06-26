@@ -9,6 +9,8 @@ import { Link, useNavigate } from "react-router-dom"
 import { PasswordInput } from "@/components/ui/password-input"
 import { toast } from "sonner"
 import axios from "axios"
+import { store } from "@/reducers/store"
+import { login } from "@/reducers/auth.reducer"
 
 const LoginForm = () => {
     const navigate = useNavigate();
@@ -31,10 +33,12 @@ const LoginForm = () => {
         
       try {
           const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, values)
-          if (res.data.token) {
-            localStorage.setItem("token", res.data.token)
+          if (res.data.user) {
+            localStorage.setItem("token", res.data.user.token)
+            console.log("res.data:", res.data.user)
+            store.dispatch(login(res.data.user))
+            setTimeout(() => navigate("/dashboard"), 500)
           }
-          navigate("/dashboard")
         } catch (error:any) {
           console.error('Form submission error', error)
           if (error.response && error.response.data) {
