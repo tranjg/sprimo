@@ -27,6 +27,9 @@ const Hero = () => {
         <Button>
           <Link to={"/register"}>Sign Up</Link>
         </Button>
+        <Button>
+          <Link to={"/login"}>Log In</Link>
+        </Button>
       </div>
     )
 }

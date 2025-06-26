@@ -33,11 +33,12 @@ const LoginForm = () => {
         
       try {
           const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, values)
-          if (res.data.user) {
+          if (res.data.success) {
             localStorage.setItem("token", res.data.user.token)
-            console.log("res.data:", res.data.user)
             store.dispatch(login(res.data.user))
-            setTimeout(() => navigate("/dashboard"), 500)
+            return navigate("/dashboard")
+          } else {
+            toast.error(res.data.message)
           }
         } catch (error:any) {
           console.error('Form submission error', error)
@@ -109,6 +110,12 @@ const LoginForm = () => {
               </div>
             </form>
           </Form>
+          <div className="mt-4 text-center text-sm">
+            Don't have an account?{' '}
+            <Link to="/register" className="underline">
+              Register
+            </Link>
+          </div>
         </CardContent>
       </Card>
     )

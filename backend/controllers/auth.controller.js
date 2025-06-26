@@ -5,11 +5,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 const db = drizzle(process.env.DATABASE_URL);
+const salt = await bcrypt.genSalt(10);
 
 export const register = async (req, res) => {
   try {
     const values = req.body;
-    const salt = await bcrypt.genSalt(10);
+
     const passwordHash = await bcrypt.hash(values.password, salt);
 
     const existingEmail = await db
@@ -57,27 +58,30 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(409).json({message: "User not found"})
     }
-    
-    await bcrypt.compare(values.password, user.password, (data) => {
-      if (data) {
-        const token = jwt.sign({id: user[0].id,email: user[0].email, username: user[0].username}, process.env.JWT_SECRET, {
-          expiresIn: 300,
-        })
-        return res
-        .status(200)
-        .json({
-          message: "Login successful",
-          user: {
-            id: user[0].id,
-            token: token,
-            username: user[0].username,
-            email: user[0].email,
-            first_name: user[0].first_name,
-            last_name: user[0].last_name
-          }
-        })
-      }
-    })
+    const isPassword = await bcrypt.compare(values.password, user[0].password)
+    if (isPassword) {
+      const token = jwt.sign({id: user[0].id,email: user[0].email, username: user[0].username}, process.env.JWT_SECRET, {
+        expiresIn: 300,
+      })
+      return res
+      .status(200)
+      .json({
+        message: "Login successful",
+        success: true,
+        user: {
+          id: user[0].id,
+          token: token,
+          username: user[0].username,
+          email: user[0].email,
+          first_name: user[0].first_name,
+          last_name: user[0].last_name
+        }
+      })
+    } else {
+      return res
+      .status(500)
+      .json({message: "Invalid login information", success: false})
+    }
   } catch (error) {
     return res.status(500).json({ message: "There was an error logging in."})
   }
