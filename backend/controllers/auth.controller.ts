@@ -4,7 +4,7 @@ import { users } from "../drizzle/schema.ts";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const db = drizzle(process.env.DATABASE_URL);
+const db = drizzle(process.env.DATABASE_URL as string);
 const salt = await bcrypt.genSalt(10);
 
 export const register = async (req, res) => {
