@@ -24,7 +24,7 @@ import { jwtDecode } from 'jwt-decode'
 const items = [
   {
     title: "Home",
-    url: "#",
+    url: "/dashboard",
     icon: Home,
   },
   {
@@ -39,7 +39,7 @@ const items = [
   },
   {
     title: "Teams",
-    url: "#",
+    url: "/dashboard/teams",
     icon: UsersRound,
   },
   {
