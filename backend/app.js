@@ -19,5 +19,8 @@ app.listen(port, () => {
 
 
 // ROUTES
-import authRoutes from './routes/auth.route.js'
+import authRoutes from './routes/auth.route.ts'
 app.use("/api/auth", authRoutes)
+
+import teamRoutes from './routes/team.route.ts'
+app.use("/api/team", teamRoutes)
