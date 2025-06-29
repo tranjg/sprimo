@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/node-postgres"
-import { teams } from "../drizzle/schema"
+import { teams } from "../drizzle/schema.ts"
 
 const db = drizzle(process.env.DATABASE_URL as string)
 
