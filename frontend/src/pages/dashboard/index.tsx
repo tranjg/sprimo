@@ -3,12 +3,9 @@ import { SprintBurndownChart } from "../../components/SprintBurndownChart.tsx";
 import { WorkItemFlowChart } from "../../components/WorkItemFlowChart.tsx";
 import { SprintGoalCompletionChart } from "../../components/SprintGoalCompletionChart.tsx";
 import { VelocityChart } from "../../components/VelocityChart.tsx";
-import { useState } from "react";
-import { store } from "@/reducers/store.ts";
 import CreateTeamDialog from "./components/CreateTeamDialog.tsx";
 
 function Dashboard() {
-  const [members, setMembers] = useState<string[]>([]);
   return (
     <Layout>
       <div className="flex-1 p-2">
