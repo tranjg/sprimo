@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { jwtDecode } from "jwt-decode"
 import { PlusIcon } from "lucide-react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useSelector } from "react-redux"
 import { toast } from "sonner"
@@ -14,10 +15,9 @@ import { z } from "zod"
 
 const CreateTeamDialog = () => {
     // const [members, setMembers] = useState<string[]>([]);
-
+  const [open, setOpen] = useState(false);
     
     const token = localStorage.getItem("token") as string
-    
     const decodedToken = jwtDecode(token)
 
     const userId = useSelector((state: any) => state.authReducer.id) || decodedToken.id
@@ -42,7 +42,9 @@ const CreateTeamDialog = () => {
           created_by: userId
         })
         if (res.data) {
+          setOpen(false);
           toast.success('Successfully added a team.')
+          form.reset()
         }
       } catch (error: any) {
         if (error.response && error.response.data) {
@@ -55,7 +57,7 @@ const CreateTeamDialog = () => {
     }
 
     return(
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
             <Button asChild>
           <DialogTrigger>
               Create Team

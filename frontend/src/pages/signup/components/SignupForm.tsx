@@ -46,6 +46,7 @@ const SignupForm = () => {
           if (res.data) {
             toast.success('Registered successfully.')
             navigate('/login')
+            form.reset()
           }
         } catch (error:any) {
           console.error('Form submission error', error)
