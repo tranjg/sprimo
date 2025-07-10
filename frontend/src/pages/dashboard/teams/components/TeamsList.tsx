@@ -1,50 +1,82 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronDown, ChevronRight, Users, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
+import axios from 'axios';
+import { useSelector } from 'react-redux';
+import { jwtDecode } from 'jwt-decode';
 
 const TeamsList = () => {
   const [expandedTeams, setExpandedTeams] = useState(new Set());
+  const [teams, setTeams] = useState<Team[]>([]);
+  const token = localStorage.getItem("token") as string;
+  const decodedToken = jwtDecode(token);
 
-  // Sample data - replace with your actual data source
-  const teams = [
-    {
-      id: 1,
-      name: "Frontend Development",
-      memberCount: 6,
-      projects: [
-        { id: 1, name: "E-commerce Redesign", sprintHealth: "healthy", completion: 85 },
-        { id: 2, name: "Mobile App v2.0", sprintHealth: "at-risk", completion: 60 },
-        { id: 3, name: "Component Library", sprintHealth: "healthy", completion: 92 }
-      ]
-    },
-    {
-      id: 2,
-      name: "Backend Services",
-      memberCount: 4,
-      projects: [
-        { id: 4, name: "API Gateway Upgrade", sprintHealth: "critical", completion: 35 },
-        { id: 5, name: "Database Migration", sprintHealth: "healthy", completion: 78 }
-      ]
-    },
-    {
-      id: 3,
-      name: "DevOps & Infrastructure",
-      memberCount: 3,
-      projects: [
-        { id: 6, name: "CI/CD Pipeline", sprintHealth: "at-risk", completion: 45 },
-        { id: 7, name: "Monitoring Setup", sprintHealth: "healthy", completion: 88 },
-        { id: 8, name: "Security Audit", sprintHealth: "blocked", completion: 20 }
-      ]
-    },
-    {
-      id: 4,
-      name: "QA & Testing",
-      memberCount: 5,
-      projects: [
-        { id: 9, name: "Automated Testing Suite", sprintHealth: "healthy", completion: 95 },
-        { id: 10, name: "Performance Testing", sprintHealth: "healthy", completion: 70 }
-      ]
-    }
-  ];
+  type Team = {
+    id: string,
+    name: string,
+    description: string,
+    memberCount: number,
+    projects: [],
+  }
+
+  const fetchTeams = async () => {
+    const teamsApartOf = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/team/get-teams`, {
+      params: {
+        userId: userId
+      }
+    })
+    setTeams(teamsApartOf.data)
+  }
+
+  const userId = useSelector((state: any) => state.authReducer.id) || decodedToken.id
+  
+  useEffect(() => {
+    fetchTeams()
+  }, [])
+ 
+  // const teams = [
+  //   {
+  //     id: 1,
+  //     name: "Frontend Development",
+  //     description: "Responsible for user interface design, web application development, and mobile app creation using React, Vue, and React Native.",
+  //     memberCount: 6,
+  //     projects: [
+  //       { id: 1, name: "E-commerce Redesign", sprintHealth: "healthy", completion: 85 },
+  //       { id: 2, name: "Mobile App v2.0", sprintHealth: "at-risk", completion: 60 },
+  //       { id: 3, name: "Component Library", sprintHealth: "healthy", completion: 92 }
+  //     ]
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "Backend Services",
+  //     description: "Manages server-side logic, database operations, API development, and microservices architecture using Node.js and Python.",
+  //     memberCount: 4,
+  //     projects: [
+  //       { id: 4, name: "API Gateway Upgrade", sprintHealth: "critical", completion: 35 },
+  //       { id: 5, name: "Database Migration", sprintHealth: "healthy", completion: 78 }
+  //     ]
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "DevOps & Infrastructure",
+  //     description: "Handles deployment pipelines, cloud infrastructure, monitoring systems, and security implementations across all environments.",
+  //     memberCount: 3,
+  //     projects: [
+  //       { id: 6, name: "CI/CD Pipeline", sprintHealth: "at-risk", completion: 45 },
+  //       { id: 7, name: "Monitoring Setup", sprintHealth: "healthy", completion: 88 },
+  //       { id: 8, name: "Security Audit", sprintHealth: "blocked", completion: 20 }
+  //     ]
+  //   },
+  //   {
+  //     id: 4,
+  //     name: "QA & Testing",
+  //     description: "Ensures product quality through automated testing, manual testing, performance testing, and continuous quality assurance processes.",
+  //     memberCount: 5,
+  //     projects: [
+  //       { id: 9, name: "Automated Testing Suite", sprintHealth: "healthy", completion: 95 },
+  //       { id: 10, name: "Performance Testing", sprintHealth: "healthy", completion: 70 }
+  //     ]
+  //   }
+  // ];
 
   const toggleTeamExpansion = (teamId) => {
     const newExpanded = new Set(expandedTeams);
@@ -88,8 +120,8 @@ const TeamsList = () => {
 
   const getOverallTeamHealth = (projects) => {
     const healthPriority = { 'critical': 4, 'blocked': 3, 'at-risk': 2, 'healthy': 1 };
-    const worstHealth = projects.reduce((worst, project) => {
-      return healthPriority[project.sprintHealth] > healthPriority[worst] ? project.sprintHealth : worst;
+    const worstHealth = projects?.reduce((worst, project) => {
+      return healthPriority[project?.sprintHealth] > healthPriority[worst] ? project.sprintHealth : worst;
     }, 'healthy');
     return worstHealth;
   };
@@ -110,9 +142,9 @@ const TeamsList = () => {
   };
 
   return (
-    <div className="flex-1 mx-auto p-6 rounded-md">
+    <div className="flex-1 mx-auto rounded-md">
       <div className="mb-8">
-        <p className="text-gray-600">Managing {teams.length} teams with {teams.reduce((sum, team) => sum + team.projects.length, 0)} active projects</p>
+        <p className="text-gray-600">Managing {teams?.length ?? 0} teams with {teams?.reduce((sum, team) => sum + (team.projects?.length ?? 0), 0) ?? 0} active projects</p>
       </div>
 
       <div className="space-y-4">
@@ -134,20 +166,19 @@ const TeamsList = () => {
                     }
                     <div className="flex items-center space-x-2">
                       <Users className="w-5 h-5 text-gray-600" />
-                      <h2 className="text-lg font-semibold text-gray-900">{team.name}</h2>
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-900">{team.name}<span className="text-sm text-gray-500 px-2">({team.memberCount} members)</span></h2>
+                        <p className="text-sm text-gray-600 mt-0.5">{team.description}</p>
+                      </div>
                     </div>
-                    <span className="text-sm text-gray-500">({team.memberCount} members)</span>
+                    
                   </div>
                   
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
                       <div className="text-sm font-medium text-gray-900">
-                        {team.projects.length} project{team.projects.length !== 1 ? 's' : ''}
+                        {team.projects?.length ?? 0} project{team.projects?.length ?? 0 !== 1 ? 's' : ''}
                       </div>
-                    </div>
-                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-full border text-xs font-medium ${getHealthColor(overallHealth)}`}>
-                      {getHealthIcon(overallHealth)}
-                      <span className="capitalize">{overallHealth}</span>
                     </div>
                   </div>
                 </div>
@@ -156,7 +187,12 @@ const TeamsList = () => {
               {isExpanded && (
                 <div className="border-t border-gray-100 bg-gray-50">
                   <div className="p-4 space-y-3">
-                    {team.projects.map((project) => (
+                    {!team.projects && (
+                      <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium text-gray-900">No projects</h3>
+                    </div>
+                    )}
+                    {team.projects?.map((project) => (
                       <div key={project.id} className="bg-white p-3 rounded-md border border-gray-100">
                         <div className="flex items-center justify-between mb-2">
                           <h3 className="font-medium text-gray-900">{project.name}</h3>
