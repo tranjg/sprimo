@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/node-postgres"
+import { eq } from "drizzle-orm"
 import { team_members, teams } from "../drizzle/schema.ts"
 
 const db = drizzle(process.env.DATABASE_URL as string)
@@ -30,12 +31,21 @@ export const addTeam = async (req, res) => {
     }
 }
 
-// export const getTeams = async (req, res) => {
-//     try {
-//         const values = req.body
+export const getTeams = async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        const teamsApartOf = await db
+        .select(teams)
+        .from(teams)
+        .innerJoin(team_members, eq(team_members.team_id, teams.id))
+        .where(eq(team_members.user_id, userId))
+   
+        return res.json(teamsApartOf)
+    } catch (error) {
+        console.error("Error fetching teams")
 
-//         await db.select().from(teams).where({
-
-//         })
-//     }
-// }
+        return res
+        .status(500)
+        .json({message: "There was an error getting teams", success: false})
+    }
+}
