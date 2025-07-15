@@ -5,6 +5,7 @@ import Signup from "../pages/signup/index.tsx";
 import Login from "../pages/login/index.tsx";
 import ProtectedRoute from "./ProtectedRoute.tsx";
 import Teams from "@/pages/dashboard/teams/index.tsx";
+import Layout from "@/pages/dashboard/layout.tsx";
 
 export const router = createBrowserRouter([
   {
@@ -16,8 +17,12 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       {
-        path: "/dashboard",
-        element: <Dashboard />,
+        path: "dashboard",
+        element: <Layout />,
+        children: [
+          {index: true, element: <Dashboard />},
+          {path: "teams", element: <Teams />}
+        ]
       }
     ]
   },
