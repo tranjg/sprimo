@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { date, pgTable, uuid, varchar, integer, text, primaryKey, unique, timestamp } from "drizzle-orm/pg-core";
+import { date, pgTable, uuid, varchar, integer, text, primaryKey, unique, timestamp, json } from "drizzle-orm/pg-core";
+
+
+export const session = pgTable("session", {
+    sid: text("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  });
 
 export const users = pgTable('users', {
     id: uuid('id').defaultRandom().primaryKey(),
@@ -43,7 +50,7 @@ export const projects = pgTable('projects', {
     team_id: uuid('team_id').references(() => teams.id, {onDelete:'cascade'}).notNull(),
     name: varchar('name', {length: 50}).notNull(),
     status: text('status').default('active'),
-    jira_project_key: text('jira_project_key'),
+    jira_board_url: text('jira_board_url'),
     github_repo_url: text('github_repo_url'),
     created_by: uuid('created_by').references(() => users.id),
     created_at: timestamp('created_at').defaultNow()
