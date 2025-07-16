@@ -15,6 +15,13 @@
       "when": 1749507218043,
       "tag": "0001_mixed_reavers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752287553137,
+      "tag": "0002_ancient_joshua_kane",
+      "breakpoints": true
     }
   ]
 }
