@@ -7,14 +7,17 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  PlusIcon,
 } from "lucide-react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { jwtDecode } from "jwt-decode";
 import CreateProjectDialog from "./CreateProjectDialog";
+import { Button } from "@/components/ui/button";
 
 const TeamsList = () => {
   const [expandedTeams, setExpandedTeams] = useState(new Set());
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const token = localStorage.getItem("token") as string;
   const decodedToken = jwtDecode(token);
@@ -175,6 +178,10 @@ const TeamsList = () => {
       </div>
 
       <div className="space-y-4">
+        <CreateProjectDialog
+          selectedTeam={selectedTeam}
+          onClose={() => setSelectedTeam(null)}
+        />
         {teams.map((team) => {
           const isExpanded = expandedTeams.has(team.id);
           const overallHealth = getOverallTeamHealth(team.projects);
@@ -213,11 +220,18 @@ const TeamsList = () => {
 
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
-                      {(team.projects?.length ?? 0) == 0 && (
-                        <div onClick={(e) => e.stopPropagation()}>
-                          <CreateProjectDialog teams={teams} />
-                        </div>
-                      )}
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTeam(team);
+                        }}
+                        className="cursor-pointer"
+                        variant={"default"}
+                      >
+                        Create Project
+                        <PlusIcon />
+                      </Button>
+
                       {(team.projects?.length ?? 0) !== 0 && (
                         <div className="text-sm font-medium text-gray-900">
                           {team.projects?.length ?? 0} project
