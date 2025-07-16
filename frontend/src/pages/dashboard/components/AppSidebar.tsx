@@ -49,7 +49,7 @@ const items = [
   },
 ];
 
-let decodedToken: string
+let decodedToken: JSON
 
 const token = localStorage.getItem("token") as string
 if (token) {
