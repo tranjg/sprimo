@@ -1,74 +1,57 @@
 import axios from "axios";
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 interface AuthContextType {
-  token: string | null;
-  setToken: (newToken: string | null) => void;
-  sessionInfo?: any; // add session info shape if you want
+    token: string | null;
+    setToken: (newToken: string | null) => void;
 }
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
-  children: ReactNode;
+    children: ReactNode;
 }
-
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [token, setTokenState] = useState<string | null>(
-    localStorage.getItem("token")
-  );
-  const [sessionInfo, setSessionInfo] = useState<any>(null);
-
+  const [token, setToken_] = useState(localStorage.getItem("token"));
+  const [sessionInfo, setSessionInfo] = useState(null);
   const setToken = (newToken: string | null) => {
-    setTokenState(newToken);
+    setToken_(newToken);
     if (newToken) {
       localStorage.setItem("token", newToken);
-      axios.defaults.headers.common["Authorization"] = "Bearer " + newToken;
     } else {
-      localStorage.removeItem("token");
-      delete axios.defaults.headers.common["Authorization"];
+      localStorage.removeItem("token")
     }
   };
 
-  useEffect(() => {
-    async function fetchSession() {
-      try {
-        const res = await axios.get("http://localhost:3000/api/auth/session", {
-          withCredentials: true,
-        });
-
-        if (res.data.accessToken) {
-          setToken(res.data.accessToken);
-        }
-        console.log("Session Info: ", res.data)
-        setSessionInfo(res.data);
-      } catch (error) {
-        setSessionInfo(null);
-        setToken(null);
+  const fetchSession = async () => {
+    try {
+      const res = await axios.get("http://localhost:3000/api/auth/session", {
+        withCredentials: true
+      })
+      if (res.data) {
+        setSessionInfo(res.data)
       }
+    } catch (error) {
+      
     }
+  }
 
-    if (!token) {
-      fetchSession();
-    } else {
+  useEffect(() => {
+    let token
+    if (token) {
       axios.defaults.headers.common["Authorization"] = "Bearer " + token;
+    } else {
+      fetchSession()
+      delete axios.defaults.headers.common["Authorization"];
     }
-  }, []);
+  }, [token]);
 
   const contextValue = useMemo(
     () => ({
       token,
       setToken,
-      sessionInfo,
+      sessionInfo
     }),
-    [token, sessionInfo]
+    [token,sessionInfo]
   );
 
   return (
