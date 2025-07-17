@@ -21,7 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { PlusIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -34,13 +34,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSearchParams } from "react-router-dom";
+import { useAuth } from "@/providers/authProvider";
+import { Label } from "@/components/ui/label";
 
-const CreateProjectDialog = ({ teams }) => {
+const CreateProjectDialog = ({ selectedTeam, onClose }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   // const [members, setMembers] = useState<string[]>([]);
-  const [open, setOpen] = useState(false);
-  const [step, setStep] = useState(0);
-  const totalSteps = 2;
+  const { sessionInfo } = useAuth();
 
+  const open = !!selectedTeam || searchParams.get("open") == "true";
+  const [step, setStep] = useState(0);
+  const [jiraProjects, setJiraProjects] = useState([]);
+  const [gitProjects, setGitProjects] = useState([]);
+  const totalSteps = 2;
   const token = localStorage.getItem("token") as string;
   const decodedToken = jwtDecode(token);
 
@@ -58,24 +65,78 @@ const CreateProjectDialog = ({ teams }) => {
       .max(250, { message: "Must be 250 or fewer characters long" })
       .optional()
       .or(z.literal("")),
-    team: z
-      .string({
-        required_error: "Please select a team to assign.",
-      })
-      .min(1, { message: "Please select an option." }),
+    jira_project: z.string(),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      team: "",
+      name: searchParams.get("name") || "",
+      description: searchParams.get("description") || "",
+      jira_project: "",
     },
   });
 
+  useEffect(() => {
+    const id = searchParams.get("id");
+    const stepParam = searchParams.get("step");
+    const shouldSetParams =
+      (!id && selectedTeam?.id) || !searchParams.get("open") || !stepParam;
+
+    if (selectedTeam || id) {
+      if (shouldSetParams) {
+        const newParams = new URLSearchParams(searchParams);
+        if (!id && selectedTeam) newParams.set("id", selectedTeam.id);
+        if (!searchParams.get("open")) newParams.set("open", "true");
+        if (!stepParam) {
+          setStep(0);
+          newParams.set("step", "0");
+        }
+        setSearchParams(newParams);
+      }
+
+      if (stepParam !== null) {
+        const parsedStep = parseInt(stepParam, 10);
+        if (!isNaN(parsedStep)) {
+          setStep(parsedStep);
+        }
+      }
+    } else {
+      setSearchParams({});
+    }
+  }, [selectedTeam]);
+
+  useEffect(() => {
+    if (sessionInfo?.accessToken !== null && open && jiraProjects.length == 0) {
+      fetchJiraProjects();
+    }
+  }, [sessionInfo?.accessToken, jiraProjects]);
+
+  const fetchJiraProjects = async () => {
+    await axios
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/jira/get-projects`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        if (res.data) {
+          setJiraProjects(res.data);
+        }
+      });
+  };
+
+  const handleDialogChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setSearchParams({});
+      form.reset();
+      setStep(0);
+      onClose();
+    }
+  };
+
   const handleBack = () => {
     if (step > 0) {
+      searchParams.set("step", (step - 1).toString());
+      setSearchParams(searchParams);
       setStep(step - 1);
     }
   };
@@ -95,12 +156,24 @@ const CreateProjectDialog = ({ teams }) => {
       //   form.reset();
       // }
       if (step < totalSteps - 1) {
-        setStep(step + 1);
+        for (const [key, value] of Object.entries(values)) {
+          if (key && value) {
+            searchParams.set(key, value);
+          }
+        }
+        searchParams.set("step", (step + 1).toString());
+        setSearchParams(searchParams);
+        setStep((prev) => prev + 1);
+
+        if (step + 1 == totalSteps) {
+          await fetchJiraProjects();
+        }
       } else {
         console.log(values);
         setStep(0);
         form.reset();
-
+        setSearchParams({});
+        onClose();
         toast.success("Form successfully submitted");
       }
     } catch (error: any) {
@@ -114,21 +187,8 @@ const CreateProjectDialog = ({ teams }) => {
       }
     }
   };
-
   return (
-    <Dialog
-      open={open}
-      onOpenChange={() => {
-        setOpen(!open);
-        form.reset();
-      }}
-    >
-      <Button asChild className="cursor-pointer" variant={"default"}>
-        <DialogTrigger>
-          Create Project
-          <PlusIcon />
-        </DialogTrigger>
-      </Button>
+    <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent>
         {step == 0 && (
           <Form {...form}>
@@ -141,6 +201,10 @@ const CreateProjectDialog = ({ teams }) => {
                 </DialogDescription>
               </DialogHeader>
               <div className="flex flex-col items-start gap-4 mt-6">
+                <div className="flex flex-row flex-1 gap-2 w-full">
+                  <Label>Team: </Label>
+                  <p>{selectedTeam?.name}</p>
+                </div>
                 <div className="grid flex-1 gap-2 w-full">
                   <ProjectFormField
                     name="name"
@@ -156,34 +220,6 @@ const CreateProjectDialog = ({ teams }) => {
                     label="Project Description:"
                     formControl={(field) => (
                       <Textarea id="description" {...field} />
-                    )}
-                  />
-                </div>
-                <div className="grid flex-1 gap-2 w-full">
-                  <ProjectFormField
-                    name="team"
-                    control={form.control}
-                    label="Team:"
-                    formControl={(field) => (
-                      <Select
-                        onValueChange={(e) => {
-                          field.onChange(e);
-                        }}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={"Select team to assign"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teams.map((team) => {
-                            return (
-                              <SelectItem value={team.id}>
-                                {team.name}
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
                     )}
                   />
                 </div>
@@ -222,28 +258,76 @@ const CreateProjectDialog = ({ teams }) => {
                 </DialogDescription>
               </DialogHeader>
               <div className="flex flex-col items-start gap-4 mt-6">
-                <div className="grid flex-1 gap-2 w-full">
-                  <ProjectFormField
-                    name="name"
-                    control={form.control}
-                    label="Project Name:"
-                    formControl={(field) => <Input id="name" {...field} />}
-                  />
-                </div>
-                <div className="grid flex-1 gap-2 w-full">
-                  <ProjectFormField
-                    name="description"
-                    control={form.control}
-                    label="Project Description:"
-                    formControl={(field) => (
-                      <Textarea id="description" {...field} />
-                    )}
-                  />
-                </div>
-                {/* <div className="grid flex-1 gap-2 w-full">
-                <Label>Add Members:</Label>
-                <InputTags value={members} onChange={setMembers}/>
-              </div> */}
+                {jiraProjects.length == 0 && (
+                  <div className="grid flex-1 gap-2 w-full">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const currentPath =
+                          "http://localhost:5173" +
+                          window.location.pathname +
+                          window.location.search;
+                        const authorizeUrl = `http://localhost:3000/api/jira/authorize?returnTo=${encodeURIComponent(
+                          currentPath
+                        )}`;
+                        window.location.href = authorizeUrl;
+                      }}
+                    >
+                      Connect to Jira
+                    </Button>
+                  </div>
+                )}
+                {jiraProjects.length > 0 && (
+                  <div className="grid flex-1 gap-2 w-full">
+                    <ProjectFormField
+                      name="jira_project"
+                      control={form.control}
+                      label="Jira Project:"
+                      formControl={(field) => (
+                        <Select
+                          onValueChange={(e) => {
+                            field.onChange(e);
+                          }}
+                          defaultValue={field.value}
+                        >
+                          <SelectTrigger className="flex">
+                            <SelectValue
+                              placeholder={"Select Jira project to assign"}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {jiraProjects.map((project) => {
+                              return (
+                                <SelectItem value={JSON.stringify(project)}>
+                                  {project.name}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                )}
+                 {gitProjects.length == 0 && (
+                  <div className="grid flex-1 gap-2 w-full">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const currentPath =
+                          "http://localhost:5173" +
+                          window.location.pathname +
+                          window.location.search;
+                        const authorizeUrl = `http://localhost:3000/api/jira/authorize?returnTo=${encodeURIComponent(
+                          currentPath
+                        )}`;
+                        window.location.href = authorizeUrl;
+                      }}
+                    >
+                      Connect to GitHub
+                    </Button>
+                  </div>
+                )}
               </div>
               <DialogFooter className="grid grid-cols-3 items-center w-full mt-6">
                 <Button
