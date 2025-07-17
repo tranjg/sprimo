@@ -9,12 +9,12 @@ import { Provider } from "react-redux";
 import { store } from "./reducers/store.ts";
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+  <>
     <Toaster position={"bottom-center"} richColors />
-    <Provider store={store}> 
+    <Provider store={store}>
       <AuthProvider>
         <RouterProvider router={router} />
       </AuthProvider>
     </Provider>
-  </StrictMode>,
+  </>
 );
