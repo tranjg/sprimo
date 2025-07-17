@@ -50,7 +50,12 @@ export const projects = pgTable('projects', {
     team_id: uuid('team_id').references(() => teams.id, {onDelete:'cascade'}).notNull(),
     name: varchar('name', {length: 50}).notNull(),
     status: text('status').default('active'),
-    jira_board_url: text('jira_board_url'),
+    jira_project_id: text('jira_project_id'),
+    jira_project_key: text('jira_project_key'),
+    jira_project_name: text('jira_project_name'),
+    jira_project_type: text('jira_project_type'),
+    cloud_id: text('cloud_id'),
+    connected_by: text('connected_by'),
     github_repo_url: text('github_repo_url'),
     created_by: uuid('created_by').references(() => users.id),
     created_at: timestamp('created_at').defaultNow()
