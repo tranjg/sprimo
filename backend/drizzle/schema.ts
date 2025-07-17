@@ -41,7 +41,7 @@ export const team_members = pgTable('team_members', {
     role: text('role').default('member'),
     joined_at: timestamp('joined_at').defaultNow()
 }, (table) => [
-    primaryKey({ columns: [table.team_id, table.user_id]})
+    unique().on(table.user_id, table.team_id)
 ]
 )
 

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const redirectUri = "http://localhost:3000/api/auth/callback"; // Must match Atlassian dev console
+const redirectUri = "http://localhost:3000/api/jira/callback"; // Must match Atlassian dev console
 const clientId = process.env.ATLASSIAN_DEV_CLIENT_ID;
 const clientSecret = process.env.ATLASSIAN_DEV_SECRET;
 
