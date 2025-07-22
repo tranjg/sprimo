@@ -87,8 +87,9 @@ export const getProjects = async (req, res) => {
       }
     );
     const cloudId = cloudResp.data[0]?.id;
-    if (!cloudId)
+    if (!cloudId) {
       return res.status(400).json({ message: "No Jira cloud found" });
+    }
 
     const response = await axios.get(
       `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/project/search`,
@@ -99,6 +100,7 @@ export const getProjects = async (req, res) => {
         },
       }
     );
+
     if (response.data.values) {
       res.json(response.data.values);
     }
