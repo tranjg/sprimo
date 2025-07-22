@@ -45,8 +45,8 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
 
   const open = !!selectedTeam || searchParams.get("open") == "true";
   const [step, setStep] = useState(0);
-  const [jiraProjects, setJiraProjects] = useState([]);
-  const [gitProjects, setGitProjects] = useState([]);
+  const [jiraProjects, setJiraProjects] = useState<any[]>([]);
+  const [gitRepos, setGitRepos] = useState<any[]>([]);
   const totalSteps = 2;
   const token = localStorage.getItem("token") as string;
   const decodedToken = jwtDecode(token);
@@ -66,6 +66,7 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
       .optional()
       .or(z.literal("")),
     jira_project: z.string(),
+    git_repo: z.string(),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -74,6 +75,7 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
       name: searchParams.get("name") || "",
       description: searchParams.get("description") || "",
       jira_project: "",
+      git_repo: "",
     },
   });
 
@@ -90,6 +92,7 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
         if (!searchParams.get("open")) newParams.set("open", "true");
         if (!stepParam) {
           setStep(0);
+          form.reset();
           newParams.set("step", "0");
         }
         setSearchParams(newParams);
@@ -98,6 +101,7 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
       if (stepParam !== null) {
         const parsedStep = parseInt(stepParam, 10);
         if (!isNaN(parsedStep)) {
+          form.reset();
           setStep(parsedStep);
         }
       }
@@ -107,12 +111,18 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
   }, [selectedTeam]);
 
   useEffect(() => {
-    if (sessionInfo?.accessToken !== null && open && jiraProjects.length == 0) {
-      fetchJiraProjects();
+    if (sessionInfo?.accessToken !== null) {
+      if (open && jiraProjects.length == 0) {
+        fetchJiraProjects();
+      }
+      if (open && gitRepos.length == 0) {
+        fetchGitRepos();
+      }
     }
-  }, [sessionInfo?.accessToken, jiraProjects]);
+  }, [sessionInfo?.accessToken, jiraProjects, gitRepos]);
 
   const fetchJiraProjects = async () => {
+    console.log('fetchin jira projects')
     await axios
       .get(`${import.meta.env.VITE_BACKEND_URL}/api/jira/get-projects`, {
         withCredentials: true,
@@ -120,6 +130,18 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
       .then((res) => {
         if (res.data) {
           setJiraProjects(res.data);
+        }
+      });
+  };
+
+  const fetchGitRepos = async () => {
+    await axios
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/github/get-repos`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        if (res.data) {
+          setGitRepos(res.data);
         }
       });
   };
@@ -143,18 +165,6 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      // const res = await axios.post(
-      //   `${import.meta.env.VITE_BACKEND_URL}/api/team/add-team`,
-      //   {
-      //     ...values,
-      //     created_by: userId,
-      //   }
-      // );
-      // if (res.data) {
-      //   setOpen(false);
-      //   toast.success("Successfully added a team.");
-      //   form.reset();
-      // }
       if (step < totalSteps - 1) {
         for (const [key, value] of Object.entries(values)) {
           if (key && value) {
@@ -167,14 +177,27 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
 
         if (step + 1 == totalSteps) {
           await fetchJiraProjects();
+          await fetchGitRepos();
         }
       } else {
-        console.log(values);
-        setStep(0);
-        form.reset();
-        setSearchParams({});
-        onClose();
-        toast.success("Form successfully submitted");
+        const res = await axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}/api/project/add-project`,
+          {
+            ...values,
+            team_id: selectedTeam.id,
+          },
+          {
+            withCredentials: true,
+          }
+        );
+        if (res.data) {
+          setStep(0);
+          new URLSearchParams(searchParams)
+          setSearchParams({});
+          onClose();
+          form.reset();
+          toast.success("Form successfully submitted");
+        }
       }
     } catch (error: any) {
       if (error.response && error.response.data) {
@@ -309,7 +332,7 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
                     />
                   </div>
                 )}
-                 {gitProjects.length == 0 && (
+                {gitRepos.length == 0 && (
                   <div className="grid flex-1 gap-2 w-full">
                     <Button
                       type="button"
@@ -318,7 +341,7 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
                           "http://localhost:5173" +
                           window.location.pathname +
                           window.location.search;
-                        const authorizeUrl = `http://localhost:3000/api/jira/authorize?returnTo=${encodeURIComponent(
+                        const authorizeUrl = `http://localhost:3000/api/github/authorize?returnTo=${encodeURIComponent(
                           currentPath
                         )}`;
                         window.location.href = authorizeUrl;
@@ -326,6 +349,38 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
                     >
                       Connect to GitHub
                     </Button>
+                  </div>
+                )}
+                {gitRepos.length > 0 && (
+                  <div className="grid flex-1 gap-2 w-full">
+                    <ProjectFormField
+                      name="git_repo"
+                      control={form.control}
+                      label="Github Repository:"
+                      formControl={(field) => (
+                        <Select
+                          onValueChange={(e) => {
+                            field.onChange(e);
+                          }}
+                          defaultValue={field.value}
+                        >
+                          <SelectTrigger className="flex">
+                            <SelectValue
+                              placeholder={"Select Github repository to assign"}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {gitRepos.map((repo) => {
+                              return (
+                                <SelectItem value={JSON.stringify(repo)}>
+                                  {repo.name}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
                 )}
               </div>

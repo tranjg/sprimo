@@ -59,6 +59,9 @@ app.use("/api/jira", jiraRoutes);
 import gitRoutes from "./routes/github.route.ts";
 app.use("/api/github", gitRoutes);
 
+import projectRoutes from "./routes/project.route.ts";
+app.use("/api/project", projectRoutes)
+
 app.listen(port, () => {
   console.log(`Sprimo Backend started on port ${port}`);
 });
