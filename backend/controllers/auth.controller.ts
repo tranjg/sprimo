@@ -93,8 +93,9 @@ export const login = async (req, res) => {
 
 export const getSessionInfo = (req, res) => {
   res.json({
-    accessToken: req.session.accessToken,
-    refreshToken: req.session.refreshToken,
+    jira_accessToken: req.session.jira_accessToken,
+    jira_refreshToken: req.session.jira_refreshToken,
+    github_accessToken: req.session.github_accessToken,
     userId: req.session.userId,
     username: req.session.username,
     expiresAt: req.session.tokenExpiresAt,

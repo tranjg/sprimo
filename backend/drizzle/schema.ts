@@ -55,7 +55,9 @@ export const projects = pgTable('projects', {
     jira_project_name: text('jira_project_name'),
     jira_project_type: text('jira_project_type'),
     cloud_id: text('cloud_id'),
-    connected_by: text('connected_by'),
+    github_repo_id: text('github_repo_id'),
+    github_repo_fullname: text('github_repo_fullname'),
+    github_default_branch: text('github_default_branch'),
     github_repo_url: text('github_repo_url'),
     created_by: uuid('created_by').references(() => users.id),
     created_at: timestamp('created_at').defaultNow()

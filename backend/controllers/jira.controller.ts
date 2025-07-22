@@ -56,12 +56,9 @@ export const callback = async (req, res) => {
       }
     );
 
-    console.log("JIRA TOKEN RESPONSE: ", tokenResponse.data);
-    console.log(returnTo);
     const { access_token, refresh_token } = tokenResponse.data;
-    req.session.accessToken = access_token; // TO-DO: save to db
-    req.session.refreshToken = refresh_token; // TO-DO: save to db
-    // res.json({ access_token: access_token, refresh_token: refresh_token });
+    req.session.jira_accessToken = access_token; // TO-DO: save to db
+    req.session.jira_refreshToken = refresh_token; // TO-DO: save to db
     res.redirect(returnTo);
   } catch (error) {
     if (error.response) {
@@ -76,7 +73,7 @@ export const callback = async (req, res) => {
 };
 
 export const getProjects = async (req, res) => {
-  const token = req.session.accessToken;
+  const token = req.session.jira_accessToken;
   if (!token) return res.status(401).json({ message: "Not authorized" });
 
   try {
@@ -89,9 +86,7 @@ export const getProjects = async (req, res) => {
         },
       }
     );
-    console.log(cloudResp);
     const cloudId = cloudResp.data[0]?.id;
-    console.log("cloudId", cloudId);
     if (!cloudId)
       return res.status(400).json({ message: "No Jira cloud found" });
 
@@ -104,8 +99,9 @@ export const getProjects = async (req, res) => {
         },
       }
     );
-    console.log(response.data.values);
-    res.json(response.data.values);
+    if (response.data.values) {
+      res.json(response.data.values);
+    }
   } catch (err) {
     console.error(
       "Error fetching Jira projects:",
@@ -116,9 +112,8 @@ export const getProjects = async (req, res) => {
 };
 
 export const getBoards = async (req, res) => {
-  const token = req.session.accessToken;
+  const token = req.session.jira_accessToken;
   if (!token) return res.status(401).json({ message: "Not authorized" });
-  console.log("in getboards");
   try {
     const cloudResp = await axios.get(
       "https://api.atlassian.com/oauth/token/accessible-resources",
@@ -131,7 +126,7 @@ export const getBoards = async (req, res) => {
     );
 
     const cloudId = cloudResp.data[0]?.id;
-    console.log(cloudId);
+
     if (!cloudId)
       return res.status(400).json({ message: "No Jira cloud found" });
 
@@ -144,7 +139,6 @@ export const getBoards = async (req, res) => {
         },
       }
     );
-    console.log(response.data.values);
     res.json(response.data.values);
   } catch (err) {
     console.error(
