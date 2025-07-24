@@ -1,11 +1,20 @@
-import express from "express"
-import { authorize, callback, getBoards, getProjects } from "../controllers/jira.controller.ts"
+import express from "express";
+import {
+  authorize,
+  callback,
+  getProjects,
+  getCompletionRate,
+  getIssuesForProject,
+} from "../controllers/jira.controller.ts";
 
-const router = express.Router()
+const router = express.Router();
 
-router.get("/authorize", authorize)
-router.get("/callback", callback)
-router.get("/get-projects", getProjects)
-router.get("/get-boards", getBoards)
+router.get("/authorize", authorize);
+router.get("/callback", callback);
+router.get("/get-projects", getProjects);
 
-export default router
+
+router.get("/get-issues-for-project", getIssuesForProject);
+router.get("/get-completion-rate", getCompletionRate);
+
+export default router;

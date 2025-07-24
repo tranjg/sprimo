@@ -26,6 +26,7 @@ import { useNavigate } from "react-router-dom";
 import { stringToGradient } from "@/lib/utils";
 import { store } from "@/reducers/store";
 import { logout } from "@/reducers/auth.reducer";
+import axios from "axios";
 export function NavUser({
   user,
 }: {
@@ -108,11 +109,12 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => {
+              onClick={async () => {
                 localStorage.removeItem("token");
                 store.dispatch(logout());
                 localStorage.clear();
                 navigate("/");
+                await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/logout`)
               }}
             >
               <LogOut />

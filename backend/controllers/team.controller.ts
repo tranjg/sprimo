@@ -38,12 +38,11 @@ export const getTeams = async (req, res) => {
         const memberCount = db.$count(team_members, eq(team_members.team_id, teams.id))
 
         const teamsApartOf = await db
-        .select({...getTableColumns(teams), memberCount, projects: getTableColumns(projects)})
+        .select({...getTableColumns(teams), memberCount})
         .from(teams)
         .innerJoin(team_members, eq(team_members.team_id, teams.id))
-        .leftJoin(projects, eq(projects.team_id, teams.id))
         .where(eq(team_members.user_id, userId))
-        .groupBy(teams.id, projects.id)
+        .groupBy(teams.id)
    
         return res.json(teamsApartOf)
     } catch (error) {

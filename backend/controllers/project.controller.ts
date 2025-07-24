@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { projects } from "../drizzle/schema.ts";
+import { project_members, projects } from "../drizzle/schema.ts";
 import axios from "axios";
+import { eq, getTableColumns } from "drizzle-orm";
 
 const db = drizzle(process.env.DATABASE_URL as string);
 
@@ -48,5 +49,30 @@ export const addProject = async (req, res) => {
     return res
       .status(500)
       .json({ message: "There was an error adding a project", success: false });
+  }
+};
+
+export const getProjects = async (req, res) => {
+  try {
+    const userId = req.query.userId;
+
+    const projectCount = db.$count(
+      project_members,
+      eq(project_members.project_id, projects.id)
+    );
+
+    const projectsApartOf = await db
+      .select({ ...getTableColumns(projects), projectCount })
+      .from(projects)
+      .innerJoin(project_members, eq(project_members.project_id, projects.id))
+      .where(eq(project_members.user_id, userId))
+      .groupBy(projects.id);
+    return res.json(projectsApartOf);
+  } catch (error) {
+    console.error("Error fetching projects");
+
+    return res
+      .status(500)
+      .json({ message: "There was an error getting projects", success: false });
   }
 };

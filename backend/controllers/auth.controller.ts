@@ -91,6 +91,19 @@ export const login = async (req, res) => {
   }
 };
 
+export const logout = (req, res) => {
+  req.session.jira_accessToken = null;
+  req.session.jira_refreshToken = null;
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Failed to destroy session:", err);
+      return res.status(500).json({ message: "Logout failed" });
+    }
+    res.clearCookie("connect.sid"); // default cookie name for express-session
+    res.status(200).json({ message: "Logged out successfully" });
+  });
+};
+
 export const getSessionInfo = (req, res) => {
   res.json({
     jira_accessToken: req.session.jira_accessToken,
