@@ -29,7 +29,7 @@ const items = [
   },
   {
     title: "Insights",
-    url: "#",
+    url: "/dashboard/insights",
     icon: FileText,
   },
   {
