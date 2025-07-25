@@ -10,8 +10,14 @@ export const authorize = async (req, res) => {
     const scopes = [
       "read:jira-user",
       "read:jira-work",
+      "read:issue:jira",
+      "read:project:jira",
+      "read:workflow:jira",
+      "read:jira-board",
+      "read:jira-software",
       "offline_access",
       "read:board-scope:jira-software",
+      "read:sprint:jira-software",
     ].join(" ");
 
     const stateData = {
@@ -117,74 +123,305 @@ export const getProjects = async (req, res) => {
   }
 };
 
-export const getIssuesForProject = async (req, res) => {
-  console.log("in get issues");
+export const getBoards = async (req, res) => {
   const token = req.session.jira_accessToken;
-  const { projectId } = req.query;
   if (!token) return res.status(401).json({ message: "Not authorized" });
-  if (!projectId) return res.status(400).json({ message: "Missing sprintId" });
+  try {
+    const cloudResp = await axios.get(
+      "https://api.atlassian.com/oauth/token/accessible-resources",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const cloudId = cloudResp.data[0]?.id;
+    if (!cloudId)
+      return res.status(400).json({ message: "No Jira cloud found" });
+
+    const projectsResp = await axios.get(
+      `https://api.atlassian.com/ex/jira/${cloudId}/rest/agile/1.0/board`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return res.json(projectsResp.data.values);
+  } catch (err) {
+    console.error(
+      "Error fetching Jira projects:",
+      err.response?.data || err.message
+    );
+    res.status(500).json({ message: "Failed to fetch projects" });
+  }
+};
+
+export const getSprintsForBoard = async (req, res) => {
+  const { boardId } = req.query;
+  const token = req.session.jira_accessToken;
 
   try {
     const cloudId = await getCloudId(token);
 
-    const jql = `project = ${projectId}`;
-
-    const searchResp = await axios.post(
-      `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search`,
-      {
-        jql,
-        fields: ["summary", "status", "assignee"],
-        maxResults: 100,
-      },
+    const response = await axios.get(
+      `https://api.atlassian.com/ex/jira/${cloudId}/rest/agile/1.0/board/${boardId}/sprint`,
       { headers: getHeaders(token) }
     );
-    res.json(searchResp.data.issues);
-  } catch (error) {
+    return res.json(response.data);
+  } catch (err) {
+    console.error("Error fetching sprints:", err.response?.data || err.message);
+    res.status(500).json({ message: "Failed to fetch sprints" });
+  }
+};
+
+export const getIssuesForSprint = async (req, res) => {
+  const { sprintId } = req.query;
+  const token = req.session.jira_accessToken;
+
+  if (!sprintId) {
+    return res.status(400).json({ message: "Sprint ID is required" });
+  }
+
+  try {
+    const cloudId = await getCloudId(token);
+
+    const jql = `sprint = ${sprintId}`;
+    const response = await axios.get(
+      `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search`,
+      {
+        headers: getHeaders(token),
+        params: {
+          jql,
+          maxResults: 100, // optional: adjust as needed
+          fields: [
+            "summary",
+            "status",
+            "assignee",
+            "issuetype",
+            "created",
+            "updated",
+            "customfield_10020", // likely the sprint field, safe to include
+          ],
+        },
+      }
+    );
+
+    res.json(response.data.issues);
+  } catch (err) {
     console.error(
       "Error fetching sprint issues:",
-      error.response?.data || error.message
+      err.response?.data || err.message
     );
     res.status(500).json({ message: "Failed to fetch sprint issues" });
   }
 };
 
 export const getCompletionRate = async (req, res) => {
+  const { sprintId } = req.query;
   const token = req.session.jira_accessToken;
-  const { projectKey } = req.query;
-
-  if (!token) return res.status(401).json({ message: "Not authorized" });
-  if (!projectKey)
-    return res.status(400).json({ message: "Missing projectKey" });
 
   try {
     const cloudId = await getCloudId(token);
 
-    const jql = `project = ${projectKey}`;
-
-    const searchResp = await axios.post(
-      `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search`,
-      {
-        jql,
-        fields: ["summary", "status", "assignee"],
-        maxResults: 100,
-      },
+    const { data } = await axios.get(
+      `https://api.atlassian.com/ex/jira/${cloudId}/rest/agile/1.0/sprint/${sprintId}/issue`,
       { headers: getHeaders(token) }
     );
-    const issues = searchResp.data.issues;
-    const total = issues.length;
 
-    const completed = issues.filter(
+    const total = data.issues.length;
+    const completed = data.issues.filter(
       (issue) => issue.fields.status.statusCategory.name === "Done"
     ).length;
 
     const rate = total === 0 ? 0 : Math.round((completed / total) * 100);
-
     res.json({ total, completed, rate });
-  } catch (error) {
+  } catch (err) {
     console.error(
       "Error calculating completion rate:",
-      error.response?.data || error.message
+      err.response?.data || err.message
     );
-    res.status(500).json({ message: "Failed to calculate completion rate" });
+    res.status(500).json({ message: "Failed to calculate rate" });
   }
 };
+
+// Helper to extract sprint info from the sprint custom field string
+const parseSprintField = (sprintRaw: string) => {
+  const sprint: Record<string, string> = {};
+  sprintRaw.split(",").forEach((part) => {
+    const [key, value] = part.split("=");
+    if (key && value) {
+      sprint[key.trim()] = value.trim();
+    }
+  });
+  return sprint;
+};
+
+export const getJiraMetrics = async (req, res) => {
+  const token = req.session.accessToken;
+  if (!token) return res.status(401).json({ message: "Not authorized" });
+
+  try {
+    // 1. Get cloud ID
+    const cloudResp = await axios.get(
+      "https://api.atlassian.com/oauth/token/accessible-resources",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    const cloudId = cloudResp.data[0]?.id;
+    if (!cloudId)
+      return res.status(400).json({ message: "No Jira cloud found" });
+
+    // 2. Fetch issues (up to 100 at a time)
+    const searchResp = await axios.get(
+      `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        params: {
+          maxResults: 100,
+          expand: "changelog",
+          fields: [
+            "summary",
+            "status",
+            "created",
+            "updated",
+            "resolutiondate",
+            "customfield_10020", // Sprint
+            "customfield_10016", // Story points (adjust to match your Jira setup)
+          ],
+        },
+      }
+    );
+
+    const issues = searchResp.data.issues;
+
+    // 3. Aggregate data for charts
+    const velocityData: Record<string, number> = {};
+    const burndownData: Record<string, number> = {};
+    const goalCompletion = { done: 0, total: issues.length };
+    const workItemFlow: any[] = [];
+
+    for (const issue of issues) {
+      const fields = issue.fields;
+      const changelog = issue.changelog?.histories || [];
+      const storyPoints = fields.customfield_10016 || 0;
+
+      // Track Goal Completion
+      if (fields.status?.statusCategory?.key === "done") goalCompletion.done++;
+
+      // Estimate velocity per sprint (or fallback to "Unknown")
+      const sprintRaw = fields.customfield_10020?.[0]; // assume latest sprint only
+      const sprint = sprintRaw ? parseSprintField(sprintRaw) : {};
+      const sprintName = sprint.name || "Unknown Sprint";
+
+      if (!velocityData[sprintName]) velocityData[sprintName] = 0;
+      velocityData[sprintName] += storyPoints;
+
+      // Burndown: count by resolution date (if done)
+      if (fields.resolutiondate) {
+        const date = fields.resolutiondate.slice(0, 10);
+        burndownData[date] = (burndownData[date] || 0) + storyPoints;
+      }
+
+      // Work item flow: gather status transitions
+      const statusChanges = changelog
+        .flatMap((h) => h.items)
+        .filter((i) => i.field === "status")
+        .map((i) => ({
+          from: i.fromString,
+          to: i.toString,
+          at: new Date(issue.fields.updated).toISOString(), // rough estimate
+        }));
+      workItemFlow.push({ key: issue.key, statusChanges });
+    }
+
+    // 4. Return aggregated metrics
+    res.json({
+      goalCompletion,
+      velocityData,
+      burndownData,
+      workItemFlow,
+    });
+  } catch (error) {
+    console.error("Jira Metrics Error:", error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to fetch Jira metrics" });
+  }
+};
+
+// export const getIssuesForProject = async (req, res) => {
+//   console.log("in get issues");
+//   const token = req.session.jira_accessToken;
+//   const { projectId } = req.query;
+//   if (!token) return res.status(401).json({ message: "Not authorized" });
+//   if (!projectId) return res.status(400).json({ message: "Missing sprintId" });
+
+//   try {
+//     const cloudId = await getCloudId(token);
+
+//     const jql = `project = ${projectId}`;
+
+//     const searchResp = await axios.post(
+//       `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search`,
+//       {
+//         jql,
+//         fields: ["summary", "status", "assignee"],
+//         maxResults: 100,
+//       },
+//       { headers: getHeaders(token) }
+//     );
+//     res.json(searchResp.data.issues);
+//   } catch (error) {
+//     console.error(
+//       "Error fetching sprint issues:",
+//       error.response?.data || error.message
+//     );
+//     res.status(500).json({ message: "Failed to fetch sprint issues" });
+//   }
+// };
+
+// export const getCompletionRate = async (req, res) => {
+//   const token = req.session.jira_accessToken;
+//   const { projectKey } = req.query;
+
+//   if (!token) return res.status(401).json({ message: "Not authorized" });
+//   if (!projectKey)
+//     return res.status(400).json({ message: "Missing projectKey" });
+
+//   try {
+//     const cloudId = await getCloudId(token);
+
+//     const jql = `project = ${projectKey}`;
+
+//     const searchResp = await axios.post(
+//       `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search`,
+//       {
+//         jql,
+//         fields: ["summary", "status", "assignee"],
+//         maxResults: 100,
+//       },
+//       { headers: getHeaders(token) }
+//     );
+//     const issues = searchResp.data.issues;
+//     const total = issues.length;
+
+//     const completed = issues.filter(
+//       (issue) => issue.fields.status.statusCategory.name === "Done"
+//     ).length;
+
+//     const rate = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+//     res.json({ total, completed, rate });
+//   } catch (error) {
+//     console.error(
+//       "Error calculating completion rate:",
+//       error.response?.data || error.message
+//     );
+//     res.status(500).json({ message: "Failed to calculate completion rate" });
+//   }
+// };
