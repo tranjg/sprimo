@@ -14,17 +14,52 @@ const jiraApi = {
     return res.data;
   },
 
-  getIssuesForProject: async (projectId: string) => {
-    const res = await axios.get(`${API_BASE}/get-issues-for-project?projectId=${projectId}`, {
+  getBoards: async () => {
+    const res = await axios.get(`${API_BASE}/get-boards`, {
       withCredentials: true,
     });
     return res.data;
   },
 
-  getCompletionRate: async (projectKey: string) => {
-    const res = await axios.get(`${API_BASE}/get-completion-rate?projectKey=${projectKey}`, {
-      withCredentials: true,
-    });
+  
+
+  getSprintsForBoard: async (boardId: string) => {
+    const res = await axios.get(
+      `${API_BASE}/get-sprints-for-board?boardId=${boardId}`,
+      {
+        withCredentials: true,
+      }
+    );
+    return res.data;
+  },
+
+  getIssuesForSprint: async (sprintId: string) => {
+    const res = await axios.get(
+      `${API_BASE}/get-issues-for-sprint?sprintId=${sprintId}`,
+      {
+        withCredentials: true,
+      }
+    );
+    return res.data;
+  },
+
+  getIssuesForProject: async (projectId: string) => {
+    const res = await axios.get(
+      `${API_BASE}/get-issues-for-project?projectId=${projectId}`,
+      {
+        withCredentials: true,
+      }
+    );
+    return res.data;
+  },
+
+  getCompletionRate: async (sprintId: string) => {
+    const res = await axios.get(
+      `${API_BASE}/get-completion-rate?sprintId=${sprintId}`,
+      {
+        withCredentials: true,
+      }
+    );
     return res.data;
   },
 
