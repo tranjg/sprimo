@@ -122,7 +122,6 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
   }, [sessionInfo?.accessToken, jiraProjects, gitRepos]);
 
   const fetchJiraProjects = async () => {
-    console.log('fetchin jira projects')
     await axios
       .get(`${import.meta.env.VITE_BACKEND_URL}/api/jira/get-projects`, {
         withCredentials: true,
