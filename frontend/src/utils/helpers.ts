@@ -110,3 +110,73 @@ export function generateWorkItemFlowData(sprint) {
     data,
   };
 }
+
+type PullRequest = {
+    state: string; // 'open', 'closed'
+    merged_at: string | null;
+  };
+  
+  export function generatePullRequestCompletionData(prs: PullRequest[]) {
+    let open = 0;
+    let merged = 0;
+    let closed = 0;
+  
+    prs.forEach((pr) => {
+      if (pr.state === "open") open++;
+      else if (pr.state === "closed" && pr.merged_at) merged++;
+      else if (pr.state === "closed") closed++;
+    });
+  
+    return [
+      { name: "Open", value: open },
+      { name: "Merged", value: merged },
+      { name: "Closed (unmerged)", value: closed },
+    ];
+  }
+
+  type Commit = {
+    commit: {
+      author: {
+        date: string; // ISO string
+      };
+    };
+  };
+  
+  export function generateCommitsOverTimeData(commits: Commit[]) {
+    // Group commits by date (YYYY-MM-DD)
+    const countsByDate: Record<string, number> = {};
+  
+    commits.forEach(({ commit }) => {
+      const date = commit.author.date.slice(0, 10); // get YYYY-MM-DD
+      countsByDate[date] = (countsByDate[date] || 0) + 1;
+    });
+  
+    // Convert to array sorted by date
+    const sortedDates = Object.keys(countsByDate).sort();
+  
+    return sortedDates.map((date) => ({
+      date,
+      commits: countsByDate[date],
+    }));
+  }
+
+  type Issue = {
+    state: string; // 'open' or 'closed'
+    labels: { name: string }[];
+  };
+  
+  export function generateIssueFlowData(issues: Issue[]) {
+    // Count issues by state or by label (example: count open vs closed)
+    const counts = { open: 0, closed: 0 };
+  
+    issues.forEach((issue) => {
+      if (issue.state === "open") counts.open++;
+      else if (issue.state === "closed") counts.closed++;
+    });
+  
+    return [
+      { name: "Open", value: counts.open },
+      { name: "Closed", value: counts.closed },
+    ];
+  }
+  

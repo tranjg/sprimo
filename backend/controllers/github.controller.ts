@@ -1,4 +1,6 @@
 import axios from "axios";
+import { getGitHubHeaders } from "../utils/helpers.ts";
+import { getGitHubClient } from "../lib/githubClient.ts";
 
 const redirectUri = "http://localhost:3000/api/github/callback"; // Must match Atlassian dev console
 const clientId = process.env.GITHUB_DEV_CLIENT_ID;
@@ -78,5 +80,70 @@ export const getRepos = async (req, res) => {
     }
   } else {
     res.status(401).json({ message: "Unauthorized", success: false });
+  }
+};
+
+const getAuthHeaders = (token) => ({
+  Authorization: `Bearer ${token}`,
+  Accept: "application/vnd.github+json",
+});
+
+export const getPullRequestsForRepo = async (req, res) => {
+  const { repo } = req.query; // repo = "owner/repo-name"
+  const token = req.session.github_accessToken;
+
+  if (!repo || !token) {
+    return res.status(400).json({ message: "Missing repo or token" });
+  }
+
+  try {
+    const response = await axios.get(
+      `https://api.github.com/repos/${repo}/pulls?state=all&per_page=100`,
+      { headers: getAuthHeaders(token) }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error("Error fetching PRs:", err.response?.data || err.message);
+    res.status(500).json({ message: "Failed to fetch pull requests" });
+  }
+};
+
+export const getCommitsForRepo = async (req, res) => {
+  const { repo } = req.query;
+  const token = req.session.github_accessToken;
+
+  if (!repo || !token) {
+    return res.status(400).json({ message: "Missing repo or token" });
+  }
+
+  try {
+    const response = await axios.get(
+      `https://api.github.com/repos/${repo}/commits?per_page=100`,
+      { headers: getAuthHeaders(token) }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error("Error fetching commits:", err.response?.data || err.message);
+    res.status(500).json({ message: "Failed to fetch commits" });
+  }
+};
+
+export const getIssuesForRepo = async (req, res) => {
+  const { repo } = req.query;
+  const token = req.session.github_accessToken;
+
+  if (!repo || !token) {
+    return res.status(400).json({ message: "Missing repo or token" });
+  }
+
+  try {
+    const response = await axios.get(
+      `https://api.github.com/repos/${repo}/issues?state=all&per_page=100`,
+      { headers: getAuthHeaders(token) }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error("Error fetching issues:", err.response?.data || err.message);
+    res.status(500).json({ message: "Failed to fetch issues" });
   }
 };

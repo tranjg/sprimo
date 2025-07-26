@@ -1,11 +1,16 @@
+import { fetchCommitsForRepo, fetchIssueFlowForRepo } from "@/api/github";
 import jiraApi from "@/api/jira";
+import { CommitsOverTimeChart } from "@/components/CommitsOverTime";
+import { IssueFlowChart } from "@/components/IssueFlowChart";
 import { SprintBurndownChart } from "@/components/SprintBurndownChart";
 import { SprintGoalCompletionChart } from "@/components/SprintGoalCompletionChart";
 import { VelocityChart } from "@/components/VelocityChart";
 import { WorkItemFlowChart } from "@/components/WorkItemFlowChart";
 import {
   generateBurndownData,
+  generateCommitsOverTimeData,
   generateGoalCompletionData,
+  generateIssueFlowData,
   generateVelocityData,
   generateWorkItemFlowData,
 } from "@/utils/helpers";
@@ -17,6 +22,8 @@ import { useSelector } from "react-redux";
 const Insights = () => {
   const [jiraProjects, setJiraProjects] = useState([]);
   const [boards, setBoards] = useState([]);
+  const [commits, setCommits] = useState([]);
+  const [gitIssues, setGitIssues] = useState([]);
   const [boardsWithSprints, setBoardsWithSprints] = useState([{}]);
   const [sprintIssues, setSprintIssues] = useState([]);
   const token = localStorage.getItem("token") as string;
@@ -94,9 +101,8 @@ const Insights = () => {
   });
 
   const workItemData = sprintIssues.map((sprint) => {
-    return generateWorkItemFlowData(sprint)
-  })
-
+    return generateWorkItemFlowData(sprint);
+  });
 
   useEffect(() => {
     if (boards.length > 0) {
@@ -111,6 +117,19 @@ const Insights = () => {
     fetchIssues();
   }, [boardsWithSprints]);
 
+  useEffect(() => {
+    fetchCommitsForRepo("tranjg/sprimo")
+      .then(setCommits)
+      .catch(console.error);
+    fetchIssueFlowForRepo("tranjg/sprimo")
+        .then(setGitIssues)
+  }, []);
+
+  const commitsData = generateCommitsOverTimeData(commits);
+  const issueFlowData = generateIssueFlowData(gitIssues);
+
+  console.log(issueFlowData)
+
   return (
     <div className="flex-1 p-5">
       {burndownPerSprint.map((sprint) => {
@@ -121,8 +140,9 @@ const Insights = () => {
       })}
       <VelocityChart data={velocityPerSprint} />
       {workItemData.map((data) => {
-        return <WorkItemFlowChart data={data}/>
+        return <WorkItemFlowChart data={data} />;
       })}
+      <CommitsOverTimeChart data={commitsData} />
     </div>
   );
 };

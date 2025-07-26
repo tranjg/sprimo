@@ -17,7 +17,6 @@ const COLORS = [
 ];
 
 export const WorkItemFlowChart = ({ data }) => {
-  console.log(data.data)
   return (
     <div>
       <h1>{data.sprintName}</h1>

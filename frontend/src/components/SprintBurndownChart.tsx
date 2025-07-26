@@ -63,7 +63,7 @@ export function SprintBurndownChart({ sprint }) {
             type="monotone"
             stroke={`var(--color-chart-1)`}
             strokeWidth={2}
-            dot={true}
+            dot={false}
           />
         </LineChart>
       </CardContent>

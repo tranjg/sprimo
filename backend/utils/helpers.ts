@@ -12,4 +12,13 @@ export const getCloudId = async (token) => {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
   });
+
+
+export function getGitHubHeaders(token: string) {
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+  };
+}
+
   
