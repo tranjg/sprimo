@@ -13,12 +13,12 @@ function Dashboard() {
         </div>
         <div className="flex lg:flex-row flex-col gap-4 mt-4 p-4 border-1 rounded-md h-full">
           <div className="flex flex-col basis-1/2 p-4 gap-4 h-full">
-            <VelocityChart />
-            <SprintGoalCompletionChart />
+            {/* <VelocityChart /> */}
+            {/* <SprintGoalCompletionChart /> */}
           </div>
           <div className="flex flex-col basis-1/2 p-4 gap-4 h-full">
-            <SprintBurndownChart />
-            <WorkItemFlowChart />
+            {/* <SprintBurndownChart /> */}
+            {/* <WorkItemFlowChart /> */}
           </div>
         </div>
       </div>

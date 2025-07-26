@@ -1,5 +1,14 @@
 import jiraApi from "@/api/jira";
 import { SprintBurndownChart } from "@/components/SprintBurndownChart";
+import { SprintGoalCompletionChart } from "@/components/SprintGoalCompletionChart";
+import { VelocityChart } from "@/components/VelocityChart";
+import { WorkItemFlowChart } from "@/components/WorkItemFlowChart";
+import {
+  generateBurndownData,
+  generateGoalCompletionData,
+  generateVelocityData,
+  generateWorkItemFlowData,
+} from "@/utils/helpers";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useEffect, useState } from "react";
@@ -69,55 +78,26 @@ const Insights = () => {
         })
       )
     );
-    console.log(issuesData);
     setSprintIssues(issuesData); // or whatever state you're using
   };
 
-  function generateBurndownData({ startDate, endDate, issues }) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const days = [];
-    const totalPoints = issues.reduce((sum, issue) => {
-      return sum + (issue.fields?.customfield_10046 || 0);
-    }, 0);
-
-    // Initialize each day with full total
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().split("T")[0];
-      days.push({ date: dateStr, remaining: totalPoints });
-    }
-
-    // Subtract points on the resolution date
-    for (const issue of issues) {
-      const storyPoints = issue.fields?.customfield_10046 || 0;
-      const resolved = issue.fields?.resolutiondate;
-      if (!storyPoints || !resolved) continue;
-
-      const resolvedDate = new Date(resolved).toISOString().split("T")[0];
-
-      // subtract from all following days
-      for (const day of days) {
-        if (day.date >= resolvedDate) {
-          day.remaining -= storyPoints;
-        }
-      }
-    }
-
-    return days;
-  }
-
   const burndownPerSprint = sprintIssues.map((sprint) => {
-    return {
-      sprintId: sprint.sprintId,
-      sprintName: sprint.sprintName,
-      data: generateBurndownData({
-        startDate: sprint.startDate,
-        endDate: sprint.endDate,
-        issues: sprint.issues,
-      }),
-    };
+    return generateBurndownData(sprint);
   });
-  console.log(burndownPerSprint)
+
+  const goalCompletionPerSprint = sprintIssues.map((sprint) => {
+    return generateGoalCompletionData(sprint);
+  });
+
+  const velocityPerSprint = sprintIssues.map((sprint) => {
+    return generateVelocityData(sprint);
+  });
+
+  const workItemData = sprintIssues.map((sprint) => {
+    return generateWorkItemFlowData(sprint)
+  })
+
+
   useEffect(() => {
     if (boards.length > 0) {
       fetchSprintsForBoard();
@@ -133,8 +113,15 @@ const Insights = () => {
 
   return (
     <div className="flex-1 p-5">
-      {burndownPerSprint.map((burndown) => {
-        return <SprintBurndownChart data={burndown.data} />;
+      {burndownPerSprint.map((sprint) => {
+        return <SprintBurndownChart sprint={sprint} />;
+      })}
+      {goalCompletionPerSprint.map((sprint) => {
+        return <SprintGoalCompletionChart sprint={sprint} />;
+      })}
+      <VelocityChart data={velocityPerSprint} />
+      {workItemData.map((data) => {
+        return <WorkItemFlowChart data={data}/>
       })}
     </div>
   );
