@@ -16,7 +16,10 @@ import {
 import { Outlet } from "react-router-dom";
 
 export default function Layout() {
-  
+  const path = window.location.pathname; // "/dashboard/teams"
+  const afterDashboard = path.split("/dashboard/")[1] || "";
+  const formattedAfterDashboard =
+    afterDashboard.charAt(0).toUpperCase() + afterDashboard.slice(1);
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -31,11 +34,11 @@ export default function Layout() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard/home">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Home</BreadcrumbPage>
+                  <BreadcrumbPage>{formattedAfterDashboard || "Home"}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
