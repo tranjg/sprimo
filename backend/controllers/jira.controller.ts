@@ -119,7 +119,7 @@ export const getProjects = async (req, res) => {
       "Error fetching Jira projects:",
       err.response?.data || err.message
     );
-    res.status(500).json({ message: "Failed to fetch projects" });
+    res.status(500).json({ message: "Failed to fetch projects", success: false });
   }
 };
 
