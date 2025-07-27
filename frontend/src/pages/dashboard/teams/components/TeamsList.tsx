@@ -175,7 +175,7 @@ const TeamsList = () => {
                           <Button
                             type="button"
                             onClick={() => {
-                              window.location.href = `http://localhost:5173/dashboard/insights/`;
+                              window.location.href = `http://localhost:5173/dashboard/insights`;
                             }}
                           >
                             View Project Insights
