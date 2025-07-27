@@ -127,7 +127,7 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
         withCredentials: true,
       })
       .then((res) => {
-        if (res.data) {
+        if (res.data.success !== false) {
           setJiraProjects(res.data);
         }
       });
@@ -139,7 +139,7 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
         withCredentials: true,
       })
       .then((res) => {
-        if (res.data) {
+        if (res.data.success !== false) {
           setGitRepos(res.data);
         }
       });
