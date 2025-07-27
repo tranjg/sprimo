@@ -147,3 +147,41 @@ export const getIssuesForRepo = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch issues" });
   }
 };
+
+export async function getPRCompletionData(
+  owner: string,
+  repo: string,
+  accessToken: string
+) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/pulls?state=closed`;
+
+  const res = await axios.get(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/vnd.github+json",
+    },
+  });
+
+  const merged = res.data.filter((pr: any) => pr.merged_at != null);
+  return {
+    total: res.data.length,
+    merged: merged.length,
+    mergeRate: merged.length / res.data.length,
+  };
+}
+
+export async function getCommitStats(
+  owner: string,
+  repo: string,
+  accessToken: string
+) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/stats/commit_activity`;
+
+  const res = await axios.get(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  return res.data;
+}
