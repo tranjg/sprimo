@@ -57,7 +57,6 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(409).json({ message: "User not found" });
     }
-    console.log(user[0]);
     const isPassword = await bcrypt.compare(values.password, user[0].password);
     if (isPassword) {
       const token = jwt.sign(
@@ -67,7 +66,10 @@ export const login = async (req, res) => {
           expiresIn: 300,
         }
       );
+
       req.session.userToken = token;
+      req.session.userId = user[0].id;
+      
       return res.status(200).json({
         message: "Login successful",
         success: true,
