@@ -9,14 +9,13 @@ function Dashboard() {
   const [projects, setProjects] = useState([]);
   const [isInJira, setIsInJira] = useState(false);
   const [isInGit, setIsInGit] = useState(false);
-
   const fetchJiraProjects = async () => {
     await axios
       .get(`${import.meta.env.VITE_BACKEND_URL}/api/jira/get-projects`, {
         withCredentials: true,
       })
       .then((res) => {
-        if (res.data.success !== false) {
+        if (res.data.success !== false || res.data !== undefined) {
           setIsInJira(true);
         }
       });
@@ -46,10 +45,10 @@ function Dashboard() {
   }, [isInGit, isInJira]);
   return (
     <div className="flex-1 p-5 gap-4">
-      {!isInJira && !isInGit && (
+      {(isInJira == false || isInGit == false) && (
         <div className="flex p-4 border-1 rounded-md justify-end bg-sidebar">
           <div className="flex gap-2">
-            {!isInJira && (
+            {isInJira == false && (
               <Button
                 type="button"
                 onClick={() => {
@@ -66,7 +65,7 @@ function Dashboard() {
                 Connect to Jira
               </Button>
             )}
-            {!isInGit && (
+            {isInGit == false && (
               <Button
                 type="button"
                 onClick={() => {
