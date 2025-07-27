@@ -1,5 +1,4 @@
 import { getHomeDashboardMetrics } from "@/api/dashboard.ts";
-import CreateTeamDialog from "./components/CreateTeamDialog.tsx";
 import { useEffect, useState } from "react";
 import { ProjectOverviewCard } from "@/components/ProjectOverviewCard.tsx";
 import { Button } from "@/components/ui/button.tsx";
