@@ -48,7 +48,10 @@ const LoginForm = () => {
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/login`,
-        values
+        values,
+        {
+          withCredentials: true,
+        }
       );
       if (res.data.success === true && res.data.user?.token) {
         localStorage.setItem("token", res.data.user.token);
