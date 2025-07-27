@@ -77,7 +77,7 @@ const TeamsList = () => {
 
   return (
     <div className="flex-1 mx-auto rounded-md">
-      <div className="mb-8">
+      {/* <div className="mb-8">
         <p className="text-gray-600">
           Managing {teams?.length ?? 0} teams with{" "}
           {teams?.reduce(
@@ -86,7 +86,7 @@ const TeamsList = () => {
           ) ?? 0}{" "}
           active projects
         </p>
-      </div>
+      </div> */}
 
       <div className="space-y-4">
         <CreateProjectDialog
@@ -172,6 +172,14 @@ const TeamsList = () => {
                           <h3 className="font-medium text-gray-900">
                             {project?.name}
                           </h3>
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              window.location.href = `http://localhost:5173/dashboard/insights/`;
+                            }}
+                          >
+                            View Project Insights
+                          </Button>
                         </div>
                       </div>
                     ))}
