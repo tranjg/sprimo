@@ -159,6 +159,23 @@ export const getBoards = async (req, res) => {
   }
 };
 
+export async function getJiraBoardsByProject(
+  jiraProjectId: string,
+  cloudId: string,
+  accessToken: string
+) {
+  const url = `https://api.atlassian.com/ex/jira/${cloudId}/rest/agile/1.0/board?projectKeyOrId=${jiraProjectId}`;
+
+  const res = await axios.get(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+    },
+  });
+
+  return res.data.values;
+}
+
 export const getSprintsForBoard = async (req, res) => {
   const { boardId } = req.query;
   const token = req.session.jira_accessToken;
@@ -247,16 +264,22 @@ export const getCompletionRate = async (req, res) => {
   }
 };
 
-// Helper to extract sprint info from the sprint custom field string
-const parseSprintField = (sprintRaw: string) => {
-  const sprint: Record<string, string> = {};
-  sprintRaw.split(",").forEach((part) => {
-    const [key, value] = part.split("=");
-    if (key && value) {
-      sprint[key.trim()] = value.trim();
-    }
-  });
-  return sprint;
+export const parseSprintField = (sprintRaw: any) => {
+  if (typeof sprintRaw === "string") {
+    const sprint: Record<string, string> = {};
+    sprintRaw.split(",").forEach((part) => {
+      const [key, value] = part.split("=");
+      if (key && value) {
+        sprint[key.trim()] = value.trim();
+      }
+    });
+    return sprint;
+  } else if (typeof sprintRaw === "object" && sprintRaw !== null) {
+    // Already a parsed sprint object
+    return sprintRaw;
+  } else {
+    return {};
+  }
 };
 
 export const getJiraMetrics = async (req, res) => {
@@ -264,7 +287,6 @@ export const getJiraMetrics = async (req, res) => {
   if (!token) return res.status(401).json({ message: "Not authorized" });
 
   try {
-    // 1. Get cloud ID
     const cloudResp = await axios.get(
       "https://api.atlassian.com/oauth/token/accessible-resources",
       {
@@ -275,7 +297,6 @@ export const getJiraMetrics = async (req, res) => {
     if (!cloudId)
       return res.status(400).json({ message: "No Jira cloud found" });
 
-    // 2. Fetch issues (up to 100 at a time)
     const searchResp = await axios.get(
       `https://api.atlassian.com/ex/jira/${cloudId}/rest/api/3/search`,
       {
@@ -301,7 +322,6 @@ export const getJiraMetrics = async (req, res) => {
 
     const issues = searchResp.data.issues;
 
-    // 3. Aggregate data for charts
     const velocityData: Record<string, number> = {};
     const burndownData: Record<string, number> = {};
     const goalCompletion = { done: 0, total: issues.length };
@@ -312,10 +332,8 @@ export const getJiraMetrics = async (req, res) => {
       const changelog = issue.changelog?.histories || [];
       const storyPoints = fields.customfield_10016 || 0;
 
-      // Track Goal Completion
       if (fields.status?.statusCategory?.key === "done") goalCompletion.done++;
 
-      // Estimate velocity per sprint (or fallback to "Unknown")
       const sprintRaw = fields.customfield_10020?.[0]; // assume latest sprint only
       const sprint = sprintRaw ? parseSprintField(sprintRaw) : {};
       const sprintName = sprint.name || "Unknown Sprint";
@@ -323,13 +341,11 @@ export const getJiraMetrics = async (req, res) => {
       if (!velocityData[sprintName]) velocityData[sprintName] = 0;
       velocityData[sprintName] += storyPoints;
 
-      // Burndown: count by resolution date (if done)
       if (fields.resolutiondate) {
         const date = fields.resolutiondate.slice(0, 10);
         burndownData[date] = (burndownData[date] || 0) + storyPoints;
       }
 
-      // Work item flow: gather status transitions
       const statusChanges = changelog
         .flatMap((h) => h.items)
         .filter((i) => i.field === "status")
@@ -341,7 +357,6 @@ export const getJiraMetrics = async (req, res) => {
       workItemFlow.push({ key: issue.key, statusChanges });
     }
 
-    // 4. Return aggregated metrics
     res.json({
       goalCompletion,
       velocityData,
