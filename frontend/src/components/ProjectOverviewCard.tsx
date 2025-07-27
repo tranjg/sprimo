@@ -56,14 +56,13 @@ export const ProjectOverviewCard = ({ project }: Props) => {
   const velocityPoints = velocityData?.[lastSprintName] ?? 0;
 
   const totalCommits = useMemo(() => {
-    if (!commitStatsArray) return 0;
+    if (!Array.isArray(commitStatsArray)) return 0;
     return commitStatsArray.reduce((acc, obj) => acc + (obj.total || 0), 0);
   }, [commitStatsArray]);
 
   const recentWeekData = commitStatsArray
     ? commitStatsArray[commitStatsArray.length - 2]
     : null;
-  console.log(recentWeekData)
 
   const weekLabel = recentWeekData
     ? new Date(recentWeekData.week * 1000).toLocaleDateString(undefined, {
