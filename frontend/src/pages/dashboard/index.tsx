@@ -1,27 +1,24 @@
-import Layout from "./layout.tsx";
-import { SprintBurndownChart } from "../../components/SprintBurndownChart.tsx";
-import { WorkItemFlowChart } from "../../components/WorkItemFlowChart.tsx";
-import { SprintGoalCompletionChart } from "../../components/SprintGoalCompletionChart.tsx";
-import { VelocityChart } from "../../components/VelocityChart.tsx";
+import { getHomeDashboardMetrics } from "@/api/dashboard.ts";
 import CreateTeamDialog from "./components/CreateTeamDialog.tsx";
+import { useEffect, useState } from "react";
+import { ProjectOverviewCard } from "@/components/ProjectOverviewCard.tsx";
 
 function Dashboard() {
+  const [projects, setProjects] = useState([]);
+  useEffect(() => {
+    getHomeDashboardMetrics().then((res) => setProjects(res.data));
+  }, []);
   return (
-      <div className="flex-1 p-5">
-        <div className="flex p-4 border-1 rounded-md justify-end bg-sidebar">
-          <CreateTeamDialog />
-        </div>
-        <div className="flex lg:flex-row flex-col gap-4 mt-4 p-4 border-1 rounded-md h-full">
-          <div className="flex flex-col basis-1/2 p-4 gap-4 h-full">
-            {/* <VelocityChart /> */}
-            {/* <SprintGoalCompletionChart /> */}
-          </div>
-          <div className="flex flex-col basis-1/2 p-4 gap-4 h-full">
-            {/* <SprintBurndownChart /> */}
-            {/* <WorkItemFlowChart /> */}
-          </div>
-        </div>
+    <div className="flex-1 p-5 gap-4">
+      <div className="flex p-4 border-1 rounded-md justify-end bg-sidebar">
+        <CreateTeamDialog />
       </div>
+      <div className="flex flex-col gap-2 mt-8 h-full">
+        {projects.map((project) => (
+          <ProjectOverviewCard key={project.projectName} project={project} />
+        ))}
+      </div>
+    </div>
   );
 }
 
