@@ -29,7 +29,6 @@ interface ProjectMetrics {
 }
 
 export const getHomeDashboardMetrics = async (req, res) => {
-  console.log("in get");
   const jiraToken = req.session.jira_accessToken;
   const githubToken = req.session.github_accessToken;
   const userId = req.session.userId;
@@ -147,7 +146,6 @@ export const getHomeDashboardMetrics = async (req, res) => {
         const [owner, repo] = githubRepo.split("/");
         const prData = await getPRCompletionData(owner, repo, githubToken);
         const commitStats = await getCommitStats(owner, repo, githubToken);
-        console.log(commitStats)
         projectMetrics.github = {
           prData,
           commitStats,
