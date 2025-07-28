@@ -74,7 +74,10 @@ const Insights = () => {
           
           // Generate GitHub charts data
           const issueFlowData = generateIssueFlowData(pullRequestCompletion);
-          const commitsData = sprints.map((sprint) => generateCommitsOverTimeData(commitActivity, sprint));
+          const commitsData = sprints.map((sprint) =>
+            generateCommitsOverTimeData(commitActivity, sprint)
+          );
+
           return (
             <div
               key={projectId}
@@ -117,12 +120,20 @@ const Insights = () => {
               )}
 
               <Section title="GitHub Activity">
-                {pullRequestCompletion.length > 0 && (
+                {/* {pullRequestCompletion.length > 0 && (
                   <IssueFlowChart data={issueFlowData} />
-                )}
-                {commitActivity.length > 0 && (
-                  commitsData.map((data) => <CommitsOverTimeChart data={data} />)
-                )}
+                )} */}
+                <IssueFlowChart
+                  data={[
+                    { name: "Open", value: 8 },
+                    { name: "Closed", value: 4 },
+                    { name: "In Progress", value: 3 },
+                  ]}
+                />
+                {commitActivity.length > 0 &&
+                  commitsData.map((data) => (
+                    <CommitsOverTimeChart data={data} />
+                  ))}
               </Section>
             </div>
           );
