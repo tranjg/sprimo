@@ -24,21 +24,29 @@ export const addProject = async (req, res) => {
     const { name, description, jira_project, git_repo, team_id } = req.body;
     const parsedJiraProject = JSON.parse(jira_project);
     const parsedGitRepo = JSON.parse(git_repo);
-    const newProject = await db.insert(projects).values({
-      team_id: team_id,
-      name: name,
-      description: description,
-      jira_project_id: parsedJiraProject.id,
-      jira_project_key: parsedJiraProject.key,
-      jira_project_name: parsedJiraProject.name,
-      jira_project_type: parsedJiraProject.style,
-      cloud_id: cloudId,
-      github_repo_id: parsedGitRepo.id,
-      github_repo_fullname: parsedGitRepo.full_name,
-      github_default_branch: parsedGitRepo.default_branch,
-      github_repo_url: parsedGitRepo.svn_url,
-      created_by: userId,
-    });
+    const newProject = await db
+      .insert(projects)
+      .values({
+        team_id: team_id,
+        name: name,
+        description: description,
+        jira_project_id: parsedJiraProject.id,
+        jira_project_key: parsedJiraProject.key,
+        jira_project_name: parsedJiraProject.name,
+        jira_project_type: parsedJiraProject.style,
+        cloud_id: cloudId,
+        github_repo_id: parsedGitRepo.id,
+        github_repo_fullname: parsedGitRepo.full_name,
+        github_default_branch: parsedGitRepo.default_branch,
+        github_repo_url: parsedGitRepo.svn_url,
+        created_by: userId,
+      })
+      .returning({ project_id: projects.id });
+      console.log(newProject[0].project_id)
+    const newProjectMember = await db.insert(project_members).values({
+      user_id: userId,
+      project_id: newProject[0].project_id,
+    })
     return res
       .status(201)
       .json({ message: "Successfully added a new project", success: true });
