@@ -18,12 +18,12 @@ import {
 export function CommitsOverTimeChart({ data }) {
   const totalCommits = data.reduce((sum, d) => sum + d.commits, 0);
   const totalDays = data.length;
-  
+  const sprintName = data.length > 0 ? data[0].sprintName : null;
   return (
     <Card className="py-4 sm:py-0">
       <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 pb-3 sm:pb-0">
-          <CardTitle>Commits Over Time</CardTitle>
+          <CardTitle>Commits Over Time - {sprintName}</CardTitle>
           <CardDescription>
             Tracking commit activity throughout the sprint duration
           </CardDescription>
