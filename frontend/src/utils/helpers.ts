@@ -7,7 +7,8 @@ export function generateBurndownData(sprint) {
 
   const issues = Array.isArray(sprint.issues) ? sprint.issues : [];
   const totalStoryPoints = issues.reduce((sum, issue) => {
-    const sp = issue?.fields?.customfield_10046;
+    const sp =
+      issue?.fields?.customfield_10046 ?? issue?.fields?.customfield_10016 ?? 0;
     return sum + (typeof sp === "number" ? sp : 0);
   }, 0);
 
@@ -71,7 +72,8 @@ export function generateVelocityData(sprint) {
   let completed = 0;
 
   for (const issue of issues) {
-    const sp = issue?.fields?.customfield_10046;
+    const sp =
+      issue?.fields?.customfield_10046 ?? issue?.fields?.customfield_10016 ?? 0;
     const storyPoints = typeof sp === "number" ? sp : 0;
     committed += storyPoints;
 
@@ -137,26 +139,37 @@ export function generatePullRequestCompletionData(prs) {
   ];
 }
 
-export function generateCommitsOverTimeData(commits) {
-  if (!Array.isArray(commits)) return [];
+export function generateCommitsOverTimeData(commits, sprint) {
+  if (!Array.isArray(commits) || !sprint?.startDate || !sprint?.endDate) return [];
 
-  // Group commits by date (YYYY-MM-DD)
-  const countsByDate = {};
+  const normalizeDate = (isoStr) => isoStr.split("T")[0];
 
-  commits.forEach(({ commit }) => {
-    const date = commit?.author?.date?.slice(0, 10);
-    if (!date) return;
-    countsByDate[date] = (countsByDate[date] || 0) + 1;
-  });
+  const start = normalizeDate(sprint.startDate);
+  const end = normalizeDate(sprint.endDate);
+  const result = [];
 
-  // Convert to array sorted by date
-  const sortedDates = Object.keys(countsByDate).sort();
+  for (const week of commits) {
+    const weekStartDate = new Date(week.week * 1000); // Start of the week
 
-  return sortedDates.map((date) => ({
-    date,
-    commits: countsByDate[date],
-  }));
+    for (let i = 0; i < 7; i++) {
+      const currentDate = new Date(weekStartDate);
+      currentDate.setDate(currentDate.getDate() + i);
+
+      const dateStr = currentDate.toISOString().split("T")[0];
+
+      if (dateStr >= start && dateStr <= end) {
+        result.push({
+          date: dateStr,
+          commits: week.days?.[i] ?? 0,
+          sprintName: sprint.sprintName
+        });
+      }
+    }
+  }
+
+  return result.sort((a, b) => a.date.localeCompare(b.date));
 }
+
 
 export function generateIssueFlowData(issues) {
   if (!Array.isArray(issues)) return [];
