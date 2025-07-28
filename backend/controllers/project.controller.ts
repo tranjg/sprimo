@@ -42,7 +42,6 @@ export const addProject = async (req, res) => {
         created_by: userId,
       })
       .returning({ project_id: projects.id });
-      console.log(newProject[0].project_id)
     const newProjectMember = await db.insert(project_members).values({
       user_id: userId,
       project_id: newProject[0].project_id,
