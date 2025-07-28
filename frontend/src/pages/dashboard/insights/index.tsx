@@ -3,11 +3,11 @@ import { useSelector } from "react-redux";
 
 import {
   generateBurndownData,
-  generateCommitsOverTimeData,
   generateGoalCompletionData,
-  generateIssueFlowData,
   generateVelocityData,
   generateWorkItemFlowData,
+  generateCommitsOverTimeData,
+  generateIssueFlowData,
 } from "@/utils/helpers";
 import { getInsightsByProject } from "@/api/insights";
 import { CommitsOverTimeChart } from "@/components/CommitsOverTime";
@@ -27,7 +27,7 @@ const Section = ({ title, children }) => (
 const Insights = () => {
   const [insights, setInsights] = useState([]);
   const token = localStorage.getItem("token") || "";
-  const decodedToken = token ? JSON.parse(atob(token.split(".")[1])) : null; // jwtDecode can be used as well
+  const decodedToken = token ? JSON.parse(atob(token.split(".")[1])) : null; // or use jwtDecode
   const userId =
     useSelector((state) => state.authReducer.id) || decodedToken?.id;
 
@@ -39,86 +39,95 @@ const Insights = () => {
       .catch(console.error);
   }, []);
 
-  // Flatten all sprints from all projects into one array for sprint charts
-  const allSprints = useMemo(() => {
+  // Group sprints by project
+  const projectsWithSprints = useMemo(() => {
     if (!insights.length) return [];
-    return insights.flatMap(({ jira }) => jira?.sprints ?? []);
+    return insights.map(({ projectId, projectName, jira, github }) => ({
+      projectId,
+      projectName,
+      sprints: jira?.sprints ?? [],
+      githubData: github ?? {},
+    }));
   }, [insights]);
-
-  // Generate sprint-based chart data
-  const burndownPerSprint = useMemo(
-    () => allSprints.map(generateBurndownData).filter(Boolean),
-    [allSprints]
-  );
-  const goalCompletionPerSprint = useMemo(
-    () => allSprints.map(generateGoalCompletionData).filter(Boolean),
-    [allSprints]
-  );
-  const velocityPerSprint = useMemo(
-    () => allSprints.map(generateVelocityData).filter(Boolean),
-    [allSprints]
-  );
-  const workItemData = useMemo(
-    () => allSprints.map(generateWorkItemFlowData).filter(Boolean),
-    [allSprints]
-  );
-
-  const allPRs = useMemo(() => {
-    if (!insights.length) return [];
-    return insights.flatMap((proj) => proj.github?.pullRequestCompletion ?? []);
-  }, [insights]);
-
-  const allCommits = useMemo(() => {
-    if (!insights.length) return [];
-    return insights.flatMap((proj) => proj.github?.commitActivity ?? []);
-  }, [insights]);
-
-  const commitsData = allSprints.map((sprint) =>
-    generateCommitsOverTimeData(allCommits, sprint)
-  );
-  const issueFlowData = useMemo(() => generateIssueFlowData(allPRs), [allPRs]);
 
   return (
     <div className="p-6 space-y-10">
-      {burndownPerSprint.length > 0 && (
-        <Section title="Burndown">
-          {burndownPerSprint.map((sprint) => (
-            <SprintBurndownChart key={sprint.sprintId} sprint={sprint} />
-          ))}
-        </Section>
-      )}
+      {projectsWithSprints.map(
+        ({ projectId, projectName, sprints, githubData }) => {
+          // Generate sprint charts data per project
+          const burndownPerSprint = sprints
+            .map(generateBurndownData)
+            .filter(Boolean);
+          const goalCompletionPerSprint = sprints
+            .map(generateGoalCompletionData)
+            .filter(Boolean);
+          const velocityPerSprint = sprints
+            .map(generateVelocityData)
+            .filter(Boolean);
+          const workItemData = sprints
+            .map(generateWorkItemFlowData)
+            .filter(Boolean);
 
-      {(goalCompletionPerSprint.length > 0 || velocityPerSprint.length > 0) && (
-        <Section title="Sprint Performance">
-          {goalCompletionPerSprint.map((sprint) => (
-            <SprintGoalCompletionChart key={sprint.sprintId} sprint={sprint} />
-          ))}
-          {velocityPerSprint.length > 0 && (
-            <VelocityChart data={velocityPerSprint} />
-          )}
-        </Section>
-      )}
+          // GitHub data for project
+          const pullRequestCompletion = githubData.pullRequestCompletion || [];
+          const commitActivity = githubData.commitActivity || [];
+          
+          // Generate GitHub charts data
+          const issueFlowData = generateIssueFlowData(pullRequestCompletion);
+          const commitsData = sprints.map((sprint) => generateCommitsOverTimeData(commitActivity, sprint));
+          return (
+            <div
+              key={projectId}
+              className="border rounded-xl p-6 bg-white shadow-md space-y-8"
+            >
+              <h1 className="text-3xl font-bold mb-6">{projectName}</h1>
 
-      {workItemData.length > 0 && (
-        <Section title="Work Item Flow">
-          {workItemData.map((data) => (
-            <WorkItemFlowChart key={data.sprintId} data={data} />
-          ))}
-        </Section>
-      )}
+              {burndownPerSprint.length > 0 && (
+                <Section title="Burndown">
+                  {burndownPerSprint.map((sprint) => (
+                    <SprintBurndownChart
+                      key={sprint.sprintId}
+                      sprint={sprint}
+                    />
+                  ))}
+                </Section>
+              )}
 
-      <Section title="GitHub Activity">
-        {/* {issueFlowData.length > 0 && <IssueFlowChart data={issueFlowData} />} */}
-        <IssueFlowChart
-          data={[
-            { name: "Open", value: 8 },
-            { name: "Closed", value: 4 },
-            { name: "In Progress", value: 3 },
-          ]}
-        />
-        {commitsData.length > 0 &&
-          commitsData.map((data) => <CommitsOverTimeChart data={data} />)}
-      </Section>
+              {(goalCompletionPerSprint.length > 0 ||
+                velocityPerSprint.length > 0) && (
+                <Section title="Sprint Performance">
+                  {goalCompletionPerSprint.map((sprint) => (
+                    <SprintGoalCompletionChart
+                      key={sprint.sprintId}
+                      sprint={sprint}
+                    />
+                  ))}
+                  {velocityPerSprint.length > 0 && (
+                    <VelocityChart data={velocityPerSprint} />
+                  )}
+                </Section>
+              )}
+
+              {workItemData.length > 0 && (
+                <Section title="Work Item Flow">
+                  {workItemData.map((data) => (
+                    <WorkItemFlowChart key={data.sprintId} data={data} />
+                  ))}
+                </Section>
+              )}
+
+              <Section title="GitHub Activity">
+                {pullRequestCompletion.length > 0 && (
+                  <IssueFlowChart data={issueFlowData} />
+                )}
+                {commitActivity.length > 0 && (
+                  commitsData.map((data) => <CommitsOverTimeChart data={data} />)
+                )}
+              </Section>
+            </div>
+          );
+        }
+      )}
     </div>
   );
 };
