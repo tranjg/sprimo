@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
-
 import {
   generateBurndownData,
   generateGoalCompletionData,
@@ -16,6 +15,14 @@ import { SprintBurndownChart } from "@/components/SprintBurndownChart";
 import { SprintGoalCompletionChart } from "@/components/SprintGoalCompletionChart";
 import { VelocityChart } from "@/components/VelocityChart";
 import { WorkItemFlowChart } from "@/components/WorkItemFlowChart";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 const Section = ({ title, children }) => (
   <section className="space-y-4">
@@ -26,8 +33,15 @@ const Section = ({ title, children }) => (
 
 const Insights = () => {
   const [insights, setInsights] = useState([]);
+  const [filters, setFilters] = useState({
+    projectId: "",
+    sprintName: "",
+    startDate: "",
+    endDate: "",
+  });
+
   const token = localStorage.getItem("token") || "";
-  const decodedToken = token ? JSON.parse(atob(token.split(".")[1])) : null; // or use jwtDecode
+  const decodedToken = token ? JSON.parse(atob(token.split(".")[1])) : null;
   const userId =
     useSelector((state) => state.authReducer.id) || decodedToken?.id;
 
@@ -39,7 +53,6 @@ const Insights = () => {
       .catch(console.error);
   }, []);
 
-  // Group sprints by project
   const projectsWithSprints = useMemo(() => {
     if (!insights.length) return [];
     return insights.map(({ projectId, projectName, jira, github }) => ({
@@ -50,11 +63,134 @@ const Insights = () => {
     }));
   }, [insights]);
 
+  const filteredProjects = useMemo(() => {
+    return projectsWithSprints
+      .filter((project) => {
+        if (filters.projectId && project.projectId !== filters.projectId)
+          return false;
+        return true;
+      })
+      .map((project) => ({
+        ...project,
+        sprints: project.sprints.filter((sprint) => {
+          const matchesName = filters.sprintName
+            ? sprint.sprintName
+                ?.toLowerCase()
+                .includes(filters.sprintName.toLowerCase())
+            : true;
+
+          const start = filters.startDate ? new Date(filters.startDate) : null;
+          const end = filters.endDate ? new Date(filters.endDate) : null;
+          const sprintStart = new Date(sprint.startDate);
+          const sprintEnd = new Date(sprint.endDate);
+
+          const inDateRange =
+            (!start || sprintEnd >= start) && (!end || sprintStart <= end);
+
+          return matchesName && inDateRange;
+        }),
+      }))
+      .filter((project) => project.sprints.length > 0);
+  }, [projectsWithSprints, filters]);
+
+  const clearFilters = () => {
+    setFilters({
+      projectId: "",
+      sprintName: "",
+      startDate: "",
+      endDate: "",
+    });
+  };
+
   return (
     <div className="p-6 space-y-10">
-      {projectsWithSprints.map(
+      {/* Filter UI */}
+      <div className="bg-white p-4 rounded-lg shadow flex flex-wrap gap-4 items-end">
+        <div className="w-60">
+          <label className="text-sm text-muted-foreground mb-1 block">
+            Project
+          </label>
+          <Select
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, projectId: value, sprintName: "" }))
+            }
+            value={filters.projectId}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All Projects" />
+            </SelectTrigger>
+            <SelectContent>
+              {projectsWithSprints.map((project) => (
+                <SelectItem key={project.projectId} value={project.projectId}>
+                  {project.projectName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-60">
+          <label className="text-sm text-muted-foreground mb-1 block">
+            Sprint Name
+          </label>
+          <Select
+            onValueChange={(value) =>
+              setFilters((f) => ({ ...f, sprintName: value }))
+            }
+            value={filters.sprintName}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All Sprints" />
+            </SelectTrigger>
+            <SelectContent>
+              {projectsWithSprints
+                .find((p) => p.projectId === filters.projectId)
+                ?.sprints.map((sprint) => (
+                  <SelectItem key={sprint.sprintName} value={sprint.sprintName}>
+                    {sprint.sprintName}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-48">
+          <label className="text-sm text-muted-foreground mb-1 block">
+            Start Date
+          </label>
+          <Input
+            type="date"
+            value={filters.startDate}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, startDate: e.target.value }))
+            }
+          />
+        </div>
+
+        <div className="w-48">
+          <label className="text-sm text-muted-foreground mb-1 block">
+            End Date
+          </label>
+          <Input
+            type="date"
+            value={filters.endDate}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, endDate: e.target.value }))
+            }
+          />
+        </div>
+
+        <button
+          onClick={clearFilters}
+          className="text-sm text-blue-600 hover:underline mt-2 ml-2"
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      {/* Insights UI */}
+      {filteredProjects.map(
         ({ projectId, projectName, sprints, githubData }) => {
-          // Generate sprint charts data per project
           const burndownPerSprint = sprints
             .map(generateBurndownData)
             .filter(Boolean);
@@ -68,11 +204,8 @@ const Insights = () => {
             .map(generateWorkItemFlowData)
             .filter(Boolean);
 
-          // GitHub data for project
           const pullRequestCompletion = githubData.pullRequestCompletion || [];
           const commitActivity = githubData.commitActivity || [];
-          
-          // Generate GitHub charts data
           const issueFlowData = generateIssueFlowData(pullRequestCompletion);
           const commitsData = sprints.map((sprint) =>
             generateCommitsOverTimeData(commitActivity, sprint)
@@ -120,19 +253,16 @@ const Insights = () => {
               )}
 
               <Section title="GitHub Activity">
-                {/* {pullRequestCompletion.length > 0 && (
-                  <IssueFlowChart data={issueFlowData} />
-                )} */}
+                {/* {pullRequestCompletion.length > 0 && ( <IssueFlowChart data={issueFlowData} /> )} */}
                 <IssueFlowChart
                   data={[
                     { name: "Open", value: 8 },
                     { name: "Closed", value: 4 },
-                    { name: "In Progress", value: 3 },
                   ]}
                 />
                 {commitActivity.length > 0 &&
-                  commitsData.map((data) => (
-                    <CommitsOverTimeChart data={data} />
+                  commitsData.map((data, i) => (
+                    <CommitsOverTimeChart key={i} data={data} />
                   ))}
               </Section>
             </div>
