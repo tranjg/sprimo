@@ -7,6 +7,7 @@ import axios from "axios";
 function Dashboard() {
   const [projects, setProjects] = useState([]);
   const [isInJira, setIsInJira] = useState(false);
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
   const [isInGit, setIsInGit] = useState(false);
   const fetchJiraProjects = async () => {
     await axios
@@ -39,9 +40,13 @@ function Dashboard() {
 
   useEffect(() => {
     if (isInGit && isInJira) {
-      getHomeDashboardMetrics().then((res) => setProjects(res.data));
+      setIsLoadingMetrics(true);
+      getHomeDashboardMetrics()
+        .then((res) => setProjects(res.data))
+        .finally(() => setIsLoadingMetrics(false));
     }
   }, [isInGit, isInJira]);
+
   return (
     <div className="flex-1 p-5 gap-4">
       {(isInJira == false || isInGit == false) && (
@@ -86,9 +91,16 @@ function Dashboard() {
       )}
       {isInJira && isInGit && (
         <div className="flex flex-col gap-2 mt-8 h-full">
-          {projects.map((project) => (
-            <ProjectOverviewCard key={project.projectName} project={project} />
-          ))}
+          {isLoadingMetrics ? (
+            <div className="text-black text-sm p-4">Loading...</div> // or a fancy loader here!
+          ) : (
+            projects.map((project) => (
+              <ProjectOverviewCard
+                key={project.projectName}
+                project={project}
+              />
+            ))
+          )}
         </div>
       )}
     </div>
