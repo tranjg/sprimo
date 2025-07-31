@@ -39,6 +39,34 @@ export const authorize = async (req, res) => {
   }
 };
 
+const refreshAccessToken = async () => {
+  const refreshToken = req.session.jira_refreshToken;
+  try {
+    const response = await axios.post(
+      "https://auth.atlassian.com/oauth/token",
+      {
+        grant_type: "refresh_token",
+        client_id: process.env.ATLASSIAN_CLIENT_ID,
+        client_secret: process.env.ATLASSIAN_SECRET,
+        refresh_token: refreshToken,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Failed to refresh token:",
+      error.response?.data || error.message
+    );
+    throw new Error("Unauthorized");
+  }
+};
+
 export const callback = async (req, res) => {
   const { code, state } = req.query;
 
@@ -83,8 +111,24 @@ export const callback = async (req, res) => {
 };
 
 export const getProjects = async (req, res) => {
-  const token = req.session.jira_accessToken;
-  if (!token) return res.status(401).json({ message: "Not authorized" });
+  let token = req.session.jira_accessToken;
+  let refreshToken = req.session.jira_refreshToken;
+
+  if (!token && !refreshToken)
+    return res.status(401).json({ message: "Not authorized" });
+
+  if (!token) {
+    try {
+      const refreshed = await refreshAccessToken();
+      token = refreshed.access_token;
+      refreshToken = refreshed.refresh_token;
+
+      req.session.jira_accessToken = token;
+      req.session.jira_refreshToken = refreshToken;
+    } catch (err) {
+      return res.status(401).json({ message: "Session expired" });
+    }
+  }
 
   try {
     const cloudResp = await axios.get(
@@ -119,7 +163,9 @@ export const getProjects = async (req, res) => {
       "Error fetching Jira projects:",
       err.response?.data || err.message
     );
-    res.status(500).json({ message: "Failed to fetch projects", success: false });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch projects", success: false });
   }
 };
 
@@ -368,5 +414,3 @@ export const getJiraMetrics = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch Jira metrics" });
   }
 };
-
-
