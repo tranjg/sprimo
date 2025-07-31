@@ -114,7 +114,12 @@ export function NavUser({
                 store.dispatch(logout());
                 localStorage.clear();
                 navigate("/");
-                await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/logout`)
+                await axios.post(
+                  `${import.meta.env.VITE_BACKEND_URL}/api/auth/logout`,
+                  {
+                    withCredentials: true,
+                  }
+                );
               }}
             >
               <LogOut />
