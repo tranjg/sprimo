@@ -1,14 +1,21 @@
 import axios from "axios";
-import React, { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 interface AuthContextType {
-    token: string | null;
-    setToken: (newToken: string | null) => void;
+  token: string | null;
+  setToken: (newToken: string | null) => void;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
-    children: ReactNode;
+  children: ReactNode;
 }
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken_] = useState(localStorage.getItem("token"));
@@ -18,29 +25,26 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (newToken) {
       localStorage.setItem("token", newToken);
     } else {
-      localStorage.removeItem("token")
+      localStorage.removeItem("token");
     }
   };
 
   const fetchSession = async () => {
     try {
       const res = await axios.get("http://localhost:3000/api/auth/session", {
-        withCredentials: true
-      })
+        withCredentials: true,
+      });
       if (res.data) {
-        setSessionInfo(res.data)
+        setSessionInfo(res.data);
       }
-    } catch (error) {
-      
-    }
-  }
+    } catch (error) {}
+  };
 
   useEffect(() => {
-    let token
     if (token) {
       axios.defaults.headers.common["Authorization"] = "Bearer " + token;
     } else {
-      fetchSession()
+      fetchSession();
       delete axios.defaults.headers.common["Authorization"];
     }
   }, [token]);
@@ -49,9 +53,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     () => ({
       token,
       setToken,
-      sessionInfo
+      sessionInfo,
     }),
-    [token,sessionInfo]
+    [token, sessionInfo]
   );
 
   return (
