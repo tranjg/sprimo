@@ -33,6 +33,7 @@ const Section = ({ title, children }) => (
 
 const Insights = () => {
   const [insights, setInsights] = useState([]);
+  const [isLoadingInsights, setIsLoadingInsights] = useState(true);
   const [filters, setFilters] = useState({
     projectId: "",
     sprintName: "",
@@ -46,11 +47,15 @@ const Insights = () => {
     useSelector((state) => state.authReducer.id) || decodedToken?.id;
 
   useEffect(() => {
+    setIsLoadingInsights(true);
     getInsightsByProject()
       .then((res) => {
         if (res?.insights) setInsights(res.insights);
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => {
+        setIsLoadingInsights(false);
+      });
   }, []);
 
   const projectsWithSprints = useMemo(() => {
@@ -62,6 +67,15 @@ const Insights = () => {
       githubData: github ?? {},
     }));
   }, [insights]);
+
+  useEffect(() => {
+    if (projectsWithSprints.length === 1) {
+      setFilters((f) => ({
+        ...f,
+        projectId: projectsWithSprints[0].projectId,
+      }));
+    }
+  }, [projectsWithSprints]);
 
   const filteredProjects = useMemo(() => {
     return projectsWithSprints
@@ -189,85 +203,102 @@ const Insights = () => {
       </div>
 
       {/* Insights UI */}
-      {filteredProjects.map(
-        ({ projectId, projectName, sprints, githubData }) => {
-          const burndownPerSprint = sprints
-            .map(generateBurndownData)
-            .filter(Boolean);
-          const goalCompletionPerSprint = sprints
-            .map(generateGoalCompletionData)
-            .filter(Boolean);
-          const velocityPerSprint = sprints
-            .map(generateVelocityData)
-            .filter(Boolean);
-          const workItemData = sprints
-            .map(generateWorkItemFlowData)
-            .filter(Boolean);
+      {isLoadingInsights ? (
+        <div className="text-center text-muted-foreground py-10">
+          <h2 className="text-lg font-semibold">Loading insights...</h2>
+          <p className="text-sm mt-2">
+            Please wait while your insights are being prepared.
+          </p>
+        </div>
+      ) : filteredProjects.length === 0 ? (
+        <div className="text-center text-muted-foreground py-10">
+          <h2 className="text-lg font-semibold">No matching sprints</h2>
+          <p className="text-sm mt-2">
+            Try adjusting your filters or create a new sprint in Jira.
+          </p>
+        </div>
+      ) : (
+        filteredProjects.map(
+          ({ projectId, projectName, sprints, githubData }) => {
+            const burndownPerSprint = sprints
+              .map(generateBurndownData)
+              .filter(Boolean);
+            const goalCompletionPerSprint = sprints
+              .map(generateGoalCompletionData)
+              .filter(Boolean);
+            const velocityPerSprint = sprints
+              .map(generateVelocityData)
+              .filter(Boolean);
+            const workItemData = sprints
+              .map(generateWorkItemFlowData)
+              .filter(Boolean);
 
-          const pullRequestCompletion = githubData.pullRequestCompletion || [];
-          const commitActivity = githubData.commitActivity || [];
-          const issueFlowData = generateIssueFlowData(pullRequestCompletion);
-          const commitsData = sprints.map((sprint) =>
-            generateCommitsOverTimeData(commitActivity, sprint)
-          );
+            const pullRequestCompletion =
+              githubData.pullRequestCompletion || [];
+            const commitActivity = githubData.commitActivity || [];
+            const issueFlowData = generateIssueFlowData(pullRequestCompletion);
+            const commitsData = sprints.map((sprint) =>
+              generateCommitsOverTimeData(commitActivity, sprint)
+            );
 
-          return (
-            <div
-              key={projectId}
-              className="border rounded-xl p-6 bg-white shadow-md space-y-8"
-            >
-              <h1 className="text-3xl font-bold mb-6">{projectName}</h1>
+            return (
+              <div
+                key={projectId}
+                className="border rounded-xl p-6 bg-white shadow-md space-y-8"
+              >
+                <h1 className="text-3xl font-bold mb-6">{projectName}</h1>
 
-              {burndownPerSprint.length > 0 && (
-                <Section title="Burndown">
-                  {burndownPerSprint.map((sprint) => (
-                    <SprintBurndownChart
-                      key={sprint.sprintId}
-                      sprint={sprint}
-                    />
-                  ))}
+                {burndownPerSprint.length > 0 && (
+                  <Section title="Burndown">
+                    {burndownPerSprint.map((sprint) => (
+                      <SprintBurndownChart
+                        key={sprint.sprintId}
+                        sprint={sprint}
+                      />
+                    ))}
+                  </Section>
+                )}
+
+                {(goalCompletionPerSprint.length > 0 ||
+                  velocityPerSprint.length > 0) && (
+                  <Section title="Sprint Performance">
+                    {goalCompletionPerSprint.map((sprint) => (
+                      <SprintGoalCompletionChart
+                        key={sprint.sprintId}
+                        sprint={sprint}
+                      />
+                    ))}
+                    {velocityPerSprint.length > 0 && (
+                      <VelocityChart data={velocityPerSprint} />
+                    )}
+                  </Section>
+                )}
+
+                {workItemData.length > 0 && (
+                  <Section title="Work Item Flow">
+                    {workItemData.map((data) => (
+                      <WorkItemFlowChart key={data.sprintId} data={data} />
+                    ))}
+                  </Section>
+                )}
+
+                <Section title="GitHub Activity">
+                  {/* {pullRequestCompletion.length > 0 && ( <IssueFlowChart data={issueFlowData} /> )} */}
+                  <IssueFlowChart
+                    data={[
+                      { name: "Open", value: 8 },
+                      { name: "Closed", value: 4 },
+                    ]}
+                  />
+                  {commitActivity.length > 0 &&
+                    commitsData.map((data, i) => (
+                      <CommitsOverTimeChart key={i} data={data} />
+                    ))}
                 </Section>
-              )}
-
-              {(goalCompletionPerSprint.length > 0 ||
-                velocityPerSprint.length > 0) && (
-                <Section title="Sprint Performance">
-                  {goalCompletionPerSprint.map((sprint) => (
-                    <SprintGoalCompletionChart
-                      key={sprint.sprintId}
-                      sprint={sprint}
-                    />
-                  ))}
-                  {velocityPerSprint.length > 0 && (
-                    <VelocityChart data={velocityPerSprint} />
-                  )}
-                </Section>
-              )}
-
-              {workItemData.length > 0 && (
-                <Section title="Work Item Flow">
-                  {workItemData.map((data) => (
-                    <WorkItemFlowChart key={data.sprintId} data={data} />
-                  ))}
-                </Section>
-              )}
-
-              <Section title="GitHub Activity">
-                {/* {pullRequestCompletion.length > 0 && ( <IssueFlowChart data={issueFlowData} /> )} */}
-                <IssueFlowChart
-                  data={[
-                    { name: "Open", value: 8 },
-                    { name: "Closed", value: 4 },
-                  ]}
-                />
-                {commitActivity.length > 0 &&
-                  commitsData.map((data, i) => (
-                    <CommitsOverTimeChart key={i} data={data} />
-                  ))}
-              </Section>
-            </div>
-          );
-        }
+              </div>
+            );
+          }
+        )
       )}
     </div>
   );
