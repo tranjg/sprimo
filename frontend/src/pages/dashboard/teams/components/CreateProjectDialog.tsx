@@ -111,11 +111,19 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
   }, [selectedTeam]);
 
   useEffect(() => {
-    if (sessionInfo?.accessToken !== null) {
+    if (sessionInfo == null) {
       if (open && jiraProjects.length == 0) {
         fetchJiraProjects();
       }
       if (open && gitRepos.length == 0) {
+        fetchGitRepos();
+      }
+    } else {
+      if (sessionInfo.jira_accessToken) {
+        fetchJiraProjects();
+      }
+
+      if (sessionInfo.github_accessToken) {
         fetchGitRepos();
       }
     }
@@ -183,7 +191,7 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
           `${import.meta.env.VITE_BACKEND_URL}/api/project/add-project`,
           {
             ...values,
-            team_id: selectedTeam.id,
+            team_id: selectedTeam?.id || searchParams.get("id"),
           },
           {
             withCredentials: true,
@@ -191,21 +199,25 @@ const CreateProjectDialog = ({ selectedTeam, onClose }) => {
         );
         if (res.data) {
           setStep(0);
-          new URLSearchParams(searchParams)
+          new URLSearchParams(searchParams);
           setSearchParams({});
           onClose();
           form.reset();
           toast.success("Form successfully submitted");
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
         }
       }
     } catch (error: any) {
+      console.log(error);
       if (error.response && error.response.data) {
         const errorMessage =
           error.response.data.message ||
           "Failed to submit the form. Please try again.";
         toast.error(errorMessage);
       } else {
-        toast.error("Failed to add a team. Please try again.");
+        toast.error("Failed to add a project. Please try again.");
       }
     }
   };
