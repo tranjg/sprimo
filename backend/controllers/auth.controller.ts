@@ -69,7 +69,7 @@ export const login = async (req, res) => {
 
       req.session.userToken = token;
       req.session.userId = user[0].id;
-      
+
       return res.status(200).json({
         message: "Login successful",
         success: true,
@@ -93,17 +93,40 @@ export const login = async (req, res) => {
   }
 };
 
-export const logout = (req, res) => {
-  req.session.jira_accessToken = null;
-  req.session.jira_refreshToken = null;
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Failed to destroy session:", err);
-      return res.status(500).json({ message: "Logout failed" });
+export const logout = async (req, res) => {
+  const refreshToken = req.session.jira_refreshToken;
+
+  if (refreshToken) {
+    try {
+      await axios.post(
+        "https://auth.atlassian.com/oauth/token/revocation",
+        {
+          token: refreshToken,
+          token_type_hint: "refresh_token",
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    } catch (err) {
+      console.error("Token revocation failed:", err.message);
     }
-    res.clearCookie("connect.sid"); // default cookie name for express-session
-    res.status(200).json({ message: "Logged out successfully" });
+  }
+
+  delete req.session.jira_accessToken;
+  delete req.session.jira_refreshToken;
+  delete req.session.github_accessToken;
+
+  req.session.save(() => {
+    req.session.destroy((err) => {
+      if (err) console.error("Session destroy error:", err);
+      res.clearCookie("connect.sid");
+      res.json({ message: "Logged out" });
+    });
   });
+
+  res.clearCookie("connect.sid", { path: "/" });
+
 };
 
 export const getSessionInfo = (req, res) => {
