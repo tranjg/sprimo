@@ -32,21 +32,21 @@ const items = [
     url: "/dashboard/insights",
     icon: FileText,
   },
-  {
-    title: "Projects",
-    url: "#",
-    icon: ClipboardList,
-  },
+  // {
+  //   title: "Projects",
+  //   url: "#",
+  //   icon: ClipboardList,
+  // },
   {
     title: "Teams",
     url: "/dashboard/teams",
     icon: UsersRound,
   },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
-  },
+  // {
+  //   title: "Settings",
+  //   url: "#",
+  //   icon: Settings,
+  // },
 ];
 
 let decodedToken: JSON
